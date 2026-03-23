@@ -256,7 +256,7 @@ export default function Home() {
 
         {/* NAVIGATION */}
         <LayoutGroup>
-          <nav className={`grid ${overwhelmMode ? 'grid-cols-1 max-w-[140px] mx-auto' : 'grid-cols-4'} gap-1 p-1.5 rounded-2xl mb-8 ${isDark ? 'bg-zinc-900' : 'bg-slate-200'}`}>
+          <nav className={`grid ${overwhelmMode ? 'grid-cols-1 max-w-35 mx-auto' : 'grid-cols-4'} gap-1 p-1.5 rounded-2xl mb-8 ${isDark ? 'bg-zinc-900' : 'bg-slate-200'}`}>
             {!overwhelmMode && (
               <>
                 <button onClick={() => setActiveTab("focus")} className={`relative py-3.5 rounded-xl text-[10px] font-bold capitalize transition-all flex flex-col items-center gap-1 ${activeTab === "focus" ? 'text-white' : 'text-zinc-500'}`}>
@@ -299,7 +299,7 @@ export default function Home() {
 
                 <div className="space-y-4">
                   {tasks.filter(t => t.date === new Date().toISOString().split('T')[0]).map((t, i) => (
-                    <motion.div layout key={`${t.id}-${i}`} className={`p-6 rounded-[32px] border-2 ${colorMap.card}`}>
+                    <motion.div layout key={`${t.id}-${i}`} className={`p-6 rounded-4xl border-2 ${colorMap.card}`}>
                       <div className="flex justify-between items-center">
                         <span className="font-bold">{t.text}</span>
                         <div className="flex gap-2">
@@ -316,7 +316,7 @@ export default function Home() {
       </div>
 
       {/* BRAIN DUMP BUTTON */}
-      <motion.button onClick={() => setIsDumpOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center text-3xl z-40 bg-amber-400 text-zinc-900"><Brain /></motion.button>
+      <motion.button onClick={() => setIsDumpOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center text-3xl z-40 bg-amber-400 text-zinc-900"><Brain /></motion.button>
 
       {/* BRAIN DUMP DRAWER (WHERE THE ERROR WAS) */}
       <AnimatePresence>
@@ -329,8 +329,8 @@ export default function Home() {
                 <button onClick={closeDumpMenu} className="w-10 h-10 rounded-full bg-zinc-900/10 flex items-center justify-center"><X size={20}/></button>
               </div>
               <form onSubmit={handleAddDump} className="flex gap-3 mb-10">
-                <input value={inputDump} onChange={e => setInputDump(e.target.value)} placeholder="Get it out of your head..." className="flex-1 bg-white border-2 rounded-[24px] px-6 py-4 text-zinc-900" />
-                <button type="submit" className="bg-zinc-900 text-white px-8 rounded-[24px] font-bold"><Plus /></button>
+                <input value={inputDump} onChange={e => setInputDump(e.target.value)} placeholder="Get it out of your head..." className="flex-1 bg-white border-2 rounded-3xl px-6 py-4 text-zinc-900" />
+                <button type="submit" className="bg-zinc-900 text-white px-8 rounded-3xl font-bold"><Plus /></button>
               </form>
               <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
                 {brainDump.map((dump, i) => (
@@ -348,10 +348,10 @@ export default function Home() {
       {/* HOURGLASS MODAL */}
       <AnimatePresence>
         {focusTask && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`fixed inset-0 z-[60] flex flex-col items-center justify-center p-12 ${colorMap.bg}`}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`fixed inset-0 z-60 flex flex-col items-center justify-center p-12 ${colorMap.bg}`}>
                 <button onClick={() => setFocusTask(null)} className="absolute top-12 right-8 px-6 py-3 rounded-full border font-black uppercase text-[10px]">Abort</button>
                 <h2 className="text-3xl font-black text-center mb-12">{focusTask.text}</h2>
-                <div className="w-full max-w-sm flex items-center justify-center relative aspect-[1/1.5] mb-8">
+                <div className="w-full max-w-sm flex items-center justify-center relative aspect-1/1.5 mb-8">
                     <svg viewBox="0 0 100 200" className="w-full h-full drop-shadow-2xl">
                         {/* Sand Logic using Stencil */}
                         <motion.rect x="20" width="60" className="fill-emerald-500" animate={{ y: 20 + (focusCompletionRatio * 75), height: 75 - (focusCompletionRatio * 75) }} transition={{ ease: "linear", duration: 1 }} />
