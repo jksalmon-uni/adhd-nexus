@@ -1,0 +1,16 @@
+{
+  "name": "ADHD Nexus",
+  "short_name": "Nexus",
+  "description": "Your daily focus and cognitive support system.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#18181b",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
