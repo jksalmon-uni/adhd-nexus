@@ -89,7 +89,7 @@ export default function Home() {
   // MARK: Task & Ritual Funcs
   const playSound = (s: string) => { if (soundEnabled) { try { new Audio(`/sounds/${s}.mp3`).play(); } catch(e){} } };
 
-  const handleAddDump = (e?: React.FormEvent) => {
+  const handleAddDump = (e: React.SubmitEvent) => {
     if (e) e.preventDefault();
     if (!inputDump.trim()) return;
     setBrainDump((prev) => [inputDump, ...prev]);
@@ -102,10 +102,18 @@ export default function Home() {
     if(ventIntervalRef.current) clearInterval(ventIntervalRef.current);
   };
 
-  // The error was because these functions had been removed from the codebase but were still being referenced
-  const handleAddTask = (e: React.FormEvent) => {
-    e.preventDefault(); if (!inputValue.trim()) return; playSound('add_task');
-    setTasks([{ text: inputValue, duration: inputDuration, id: `${Date.now()}-${Math.random()}`, date: inputDate, subTasks: [], priority: inputPriority }, ...tasks]);
+  const handleAddTask = (e: React.SubmitEvent) => {
+    e.preventDefault(); if (!inputValue.trim()) return; 
+    playSound('add_task');
+    setTasks([{ 
+      text: inputValue, 
+      duration: inputDuration, 
+      id: `${Date.now()}-${Math.random()}`,
+      date: inputDate, 
+      subTasks: [], 
+      priority: inputPriority 
+    }, 
+      ...tasks]);
     setInputValue(""); setInputDuration(0); setInputPriority("med"); setShowDurationPicker(false);
   };
 
