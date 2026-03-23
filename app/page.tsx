@@ -18,6 +18,7 @@ type Reward = { title: string; cost: number; id: string; };
 type Ritual = { id: string; text: string; completed: boolean; lastCompletedDate: string; };
 
 export default function Home() {
+  // MARK: State & persistence
   // --- 0. DATA ISOLATION ---
   const [isDevMode, setIsDevMode] = useState(false);
   const SAVE_KEY = useMemo(() => isDevMode ? "dev-nexus-" : "prod-nexus-", [isDevMode]);
@@ -85,6 +86,7 @@ export default function Home() {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- 2. CORE FUNCTIONS (DEFINED BEFORE USE) ---
+  // MARK: Task & Ritual Funcs
   const playSound = (s: string) => { if (soundEnabled) { try { new Audio(`/sounds/${s}.mp3`).play(); } catch(e){} } };
 
   const handleAddDump = (e?: React.FormEvent) => {
@@ -98,6 +100,19 @@ export default function Home() {
     setIsDumpOpen(false);
     setIsVentMode(false);
     if(ventIntervalRef.current) clearInterval(ventIntervalRef.current);
+  };
+
+  // The error was because these functions had been removed from the codebase but were still being referenced
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault(); if (!inputValue.trim()) return; playSound('add_task');
+    setTasks([{ text: inputValue, duration: inputDuration, id: `${Date.now()}-${Math.random()}`, date: inputDate, subTasks: [], priority: inputPriority }, ...tasks]);
+    setInputValue(""); setInputDuration(0); setInputPriority("med"); setShowDurationPicker(false);
+  };
+
+  const promoteToTask = (text: string, index: number) => {
+    setTasks([{ text, duration: 0, id: `${Date.now()}-${Math.random()}`, date: new Date().toISOString().split('T')[0], subTasks: [], priority: 'med' }, ...tasks]);
+    setBrainDump(brainDump.filter((_, i) => i !== index)); closeDumpMenu(); setOverwhelmMode(false); setActiveTab("focus");
+    confetti({ particleCount: 40 });
   };
 
   const completeTask = (taskId: string) => {
@@ -198,6 +213,7 @@ export default function Home() {
 
   if (!isLoaded) return null;
 
+  // MARK: User Interface
   return (
     <main className={`flex min-h-screen flex-col items-center font-sans transition-all duration-700 ${colorMap.bg} relative overflow-x-hidden`}>
       <div className="w-full max-w-md px-6 pb-24 relative z-10">
