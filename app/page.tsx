@@ -250,7 +250,7 @@ export default function Home() {
         <header className="mb-6 text-center mt-2">
           <h1 className={`text-4xl font-black mb-2 tracking-tight ${colorMap.textMain}`}>{overwhelmMode ? 'Focus on Breath.' : greeting}</h1>
           <button onClick={() => setOverwhelmMode(!overwhelmMode)} className={`text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-full transition-all ${overwhelmMode ? 'bg-emerald-500 text-white' : 'bg-blue-500/10 text-blue-400'}`}>
-            {overwhelmMode ? "I'm Better" : "⚠️ Overwhelmed"}
+            {overwhelmMode ? "I'm Better" : "⚠️ I'm Overwhelmed"}
           </button>
         </header>
 
