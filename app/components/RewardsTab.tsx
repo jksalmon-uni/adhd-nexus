@@ -70,10 +70,10 @@ export default function RewardsTab({ isDark, points, rewards, onSpendPoints, onR
       </button>
 
       {/* Add reward form */}
-      <form onSubmit={addReward} className={`p-3 rounded-[32px] mt-8 mb-6 flex items-center gap-2 border ${card} overflow-hidden`}>
+      <form onSubmit={addReward} className={`p-3 rounded-4xl mt-8 mb-6 flex items-center gap-2 border ${card} overflow-hidden`}>
         <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Reward..." className={`flex-1 min-w-0 px-4 py-3 rounded-2xl text-sm border ${input}`} />
-        <input type="number" value={newCost} onChange={e => setNewCost(e.target.value)} placeholder="Cost" min="1" className={`w-24 px-3 py-3 rounded-2xl text-sm border ${input}`} />
-        <button type="submit" className="bg-purple-600 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-2xl font-bold text-white">
+        <input type="number" value={newCost} onChange={e => setNewCost(e.target.value === "" ? "" : Number(e.target.value))} placeholder="Cost" min="1" className={`w-24 px-3 py-3 rounded-2xl text-sm border ${input}`} />
+        <button type="submit" className="bg-purple-600 w-12 h-12 flex shrink-0 items-center justify-center rounded-2xl font-bold text-white">
           <Plus size={20} />
         </button>
       </form>

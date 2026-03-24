@@ -4,7 +4,7 @@ import confetti from "canvas-confetti";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
   Target, Calendar as CalIcon, Leaf, Gem,
-  Settings, Brain, CheckCircle2, X, Plus,
+  Settings, Brain, CheckCircle2,
   Zap, History, Play,
   CloudRain, Coffee, Headphones, Timer,
   Gift, TimerReset
@@ -16,6 +16,7 @@ import WinLogModal from "./components/WinLogModal";
 import RechargeTab from "./components/RechargeTab";
 import RewardsTab from "./components/RewardsTab";
 import MysteryPrizeModal from "./components/MysteryPrizeModal";
+import BrainDumpDrawer from "./components/BrainDumpDrawer";
 
 import type { Task, Priority, Reward } from "./types";
 
@@ -65,7 +66,6 @@ export default function Home() {
 
   // --- INPUTS ---
   const [inputValue, setInputValue] = useState("");
-  const [inputDump, setInputDump] = useState("");
   const [inputDuration, setInputDuration] = useState<number>(0);
   const [inputPriority, setInputPriority] = useState<Priority>("med");
   const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
@@ -75,9 +75,6 @@ export default function Home() {
   const [randomTaskId, setRandomTaskId] = useState<string | null>(null);
 
   // --- TIMER & AUDIO REFS ---
-  const [isVentMode, setIsVentMode] = useState(false);
-  const [ventTimer, setVentTimer] = useState(60);
-  const ventIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [ambientTrack, setAmbientTrack] = useState<"none" | "rain" | "cafe" | "lofi">("none");
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
   const focusIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -92,18 +89,6 @@ export default function Home() {
   // MARK: Task & Ritual Funcs
   const playSound = (s: string) => { if (soundEnabled) { try { new Audio(`/sounds/${s}.mp3`).play(); } catch(e){} } };
 
-  const handleAddDump = (e: React.SubmitEvent) => {
-    if (e) e.preventDefault();
-    if (!inputDump.trim()) return;
-    setBrainDump((prev) => [inputDump, ...prev]);
-    setInputDump("");
-  };
-
-  const closeDumpMenu = () => {
-    setIsDumpOpen(false);
-    setIsVentMode(false);
-    if(ventIntervalRef.current) clearInterval(ventIntervalRef.current);
-  };
 
   const handleAddTask = (e: React.SubmitEvent) => {
     e.preventDefault(); if (!inputValue.trim()) return; 
@@ -122,7 +107,7 @@ export default function Home() {
 
   const promoteToTask = (text: string, index: number) => {
     setTasks([{ text, duration: 0, id: `${Date.now()}-${Math.random()}`, date: new Date().toISOString().split('T')[0], subTasks: [], priority: 'med' }, ...tasks]);
-    setBrainDump(brainDump.filter((_, i) => i !== index)); closeDumpMenu(); setOverwhelmMode(false); setActiveTab("focus");
+    setBrainDump(brainDump.filter((_, i) => i !== index)); setIsDumpOpen(false); setOverwhelmMode(false); setActiveTab("focus");
     confetti({ particleCount: 40 });
   };
 
@@ -341,32 +326,16 @@ export default function Home() {
       {/* BRAIN DUMP BUTTON */}
       <motion.button onClick={() => setIsDumpOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center text-3xl z-40 bg-amber-400 text-zinc-900"><Brain /></motion.button>
 
-      {/* BRAIN DUMP DRAWER (WHERE THE ERROR WAS) */}
-      <AnimatePresence>
-        {isDumpOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeDumpMenu} className="fixed inset-0 bg-black/60 backdrop-blur-md z-50" />
-            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto rounded-t-[50px] p-10 pb-16 z-50 shadow-2xl ${isDark ? 'bg-zinc-900' : 'bg-amber-50'}`}>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-black">Notes</h2>
-                <button onClick={closeDumpMenu} className="w-10 h-10 rounded-full bg-zinc-900/10 flex items-center justify-center"><X size={20}/></button>
-              </div>
-              <form onSubmit={handleAddDump} className="flex gap-3 mb-10">
-                <input value={inputDump} onChange={e => setInputDump(e.target.value)} placeholder="Get it out of your head..." className="flex-1 bg-white border-2 rounded-3xl px-6 py-4 text-zinc-900" />
-                <button type="submit" className="bg-zinc-900 text-white px-8 rounded-3xl font-bold"><Plus /></button>
-              </form>
-              <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
-                {brainDump.map((dump, i) => (
-                  <div key={`dump-${i}`} className="bg-white/80 p-5 rounded-[28px] flex justify-between items-center">
-                    <span className="text-sm font-bold text-zinc-800">{dump}</span>
-                    <button onClick={() => promoteToTask(dump, i)} className="bg-zinc-900 text-white text-[10px] font-black px-4 py-2 rounded-xl">TASKIFY</button>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <BrainDumpDrawer
+        isOpen={isDumpOpen}
+        onClose={() => setIsDumpOpen(false)}
+        isDark={isDark}
+        overwhelmMode={overwhelmMode}
+        brainDump={brainDump}
+        onAddNote={(text) => setBrainDump(prev => [text, ...prev])}
+        onDeleteNote={(i) => setBrainDump(prev => prev.filter((_, idx) => idx !== i))}
+        onPromoteToTask={promoteToTask}
+      />
 
       {/* HOURGLASS MODAL */}
       <AnimatePresence>
