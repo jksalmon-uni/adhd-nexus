@@ -9,7 +9,9 @@ import {
   CloudRain, Coffee, Headphones, Timer, CheckSquare,
   Gift, TimerReset
 } from "lucide-react";
-import CalendarTab from "./components/CalendarTab"; // fix: import CalendarTab from "components/CalendarTab";
+
+import CalendarTab from "./components/CalendarTab";
+import SettingsModal from "./components/SettingsModal";
 
 // --- TYPES ---
 type Priority = "low" | "med" | "high" | "urgent";
@@ -369,6 +371,14 @@ export default function Home() {
             </motion.div>
         )}
       </AnimatePresence>
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        isDark={isDark}
+        onToggleTheme={() => setTheme(isDark ? 'light' : 'dark')}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled(!soundEnabled)}
+      />
     </main>
   );
 }
