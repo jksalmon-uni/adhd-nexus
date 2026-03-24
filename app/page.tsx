@@ -13,6 +13,7 @@ import {
 import CalendarTab from "./components/CalendarTab";
 import SettingsModal from "./components/SettingsModal";
 import WinLogModal from "./components/WinLogModal";
+import RechargeTab from "./components/RechargeTab";
 
 import type { Task, SubTask, Priority } from "./types";
 
@@ -316,6 +317,10 @@ export default function Home() {
 
           {activeTab === "calendar" && !overwhelmMode && (
             <CalendarTab tasks={tasks} isDark={isDark} />
+          )}
+
+          {activeTab === "recharge" && (
+            <RechargeTab isDark={isDark} />
           )}
         </AnimatePresence>
       </div>
