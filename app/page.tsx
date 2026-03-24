@@ -15,10 +15,7 @@ import SettingsModal from "./components/Modals/SettingsModal";
 import WinLogModal from "./components/Modals/WinLogModal";
 import MysteryPrizeModal from "./components/Modals/MysteryPrizeModal";
 
-import type { Task, Priority, Reward } from "./types";
-
-// --- LOCAL TYPES ---
-type Ritual = { id: string; text: string; completed: boolean; lastCompletedDate: string; };
+import type { Task, Priority, Reward, Ritual } from "./types";
 
 export default function Home() {
   // MARK: State & persistence
