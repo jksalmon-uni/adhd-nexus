@@ -15,3 +15,5 @@ export type SubTask = {
 };
 
 export type Priority = "low" | "med" | "high" | "urgent";
+
+export type Reward = { title: string; cost: number; id: string; };

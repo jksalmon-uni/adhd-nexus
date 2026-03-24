@@ -14,11 +14,12 @@ import CalendarTab from "./components/CalendarTab";
 import SettingsModal from "./components/SettingsModal";
 import WinLogModal from "./components/WinLogModal";
 import RechargeTab from "./components/RechargeTab";
+import RewardsTab from "./components/RewardsTab";
+import MysteryPrizeModal from "./components/MysteryPrizeModal";
 
-import type { Task, SubTask, Priority } from "./types";
+import type { Task, Priority, Reward } from "./types";
 
 // --- LOCAL TYPES ---
-type Reward = { title: string; cost: number; id: string; };
 type Ritual = { id: string; text: string; completed: boolean; lastCompletedDate: string; };
 
 export default function Home() {
@@ -322,6 +323,18 @@ export default function Home() {
           {activeTab === "recharge" && (
             <RechargeTab isDark={isDark} />
           )}
+
+          {activeTab === "rewards" && !overwhelmMode && (
+            <RewardsTab
+              isDark={isDark}
+              points={points}
+              rewards={rewards}
+              onSpendPoints={(amount) => setPoints(p => p - amount)}
+              onRewardsChange={setRewards}
+              onMysteryWin={setMysteryPrize}
+              playSound={playSound}
+            />
+          )}
         </AnimatePresence>
       </div>
 
@@ -377,6 +390,7 @@ export default function Home() {
         )}
       </AnimatePresence>
       {/* Modals */}
+      <MysteryPrizeModal prize={mysteryPrize} onClaim={() => setMysteryPrize(null)} />
       <WinLogModal
         isOpen={isVaultOpen}
         onClose={() => setIsVaultOpen(false)}
