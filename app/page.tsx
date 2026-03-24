@@ -6,12 +6,13 @@ import {
   Target, Calendar as CalIcon, Leaf, Gem,
   Settings, Brain, CheckCircle2, X, Plus,
   Zap, History, Play,
-  CloudRain, Coffee, Headphones, Timer, CheckSquare,
+  CloudRain, Coffee, Headphones, Timer,
   Gift, TimerReset
 } from "lucide-react";
 
 import CalendarTab from "./components/CalendarTab";
 import SettingsModal from "./components/SettingsModal";
+import WinLogModal from "./components/WinLogModal";
 
 import type { Task, SubTask, Priority } from "./types";
 
@@ -370,6 +371,13 @@ export default function Home() {
             </motion.div>
         )}
       </AnimatePresence>
+      {/* Modals */}
+      <WinLogModal
+        isOpen={isVaultOpen}
+        onClose={() => setIsVaultOpen(false)}
+        isDark={isDark}
+        completedTasks={completedTasks}
+      />
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
