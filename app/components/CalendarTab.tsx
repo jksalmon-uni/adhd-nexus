@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-type Task = { text: string; duration: number; id: string; date: string; };
+import type { Task } from "../types";
 
 type Properties = {
   tasks: Task[];
@@ -21,6 +21,7 @@ export default function CalendarTab({ tasks, isDark }: Properties) {
   const [viewDate, setViewDate] = useState(new Date());
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("month");
 
+  // to do: consider moving styles to global definitions for consistency between views
   const textMuted = isDark ? "text-zinc-500" : "text-slate-400";
   const textMain = isDark ? "text-zinc-100" : "text-slate-900";
   const card = isDark ? "bg-zinc-900 border-zinc-800 shadow-xl" : "bg-white border-slate-200 shadow-sm";

@@ -13,10 +13,9 @@ import {
 import CalendarTab from "./components/CalendarTab";
 import SettingsModal from "./components/SettingsModal";
 
-// --- TYPES ---
-type Priority = "low" | "med" | "high" | "urgent";
-type SubTask = { text: string; completed: boolean; id: string; };
-type Task = { text: string; duration: number; id: string; date: string; subTasks: SubTask[]; priority: Priority; };
+import type { Task, SubTask, Priority } from "./types";
+
+// --- LOCAL TYPES ---
 type Reward = { title: string; cost: number; id: string; };
 type Ritual = { id: string; text: string; completed: boolean; lastCompletedDate: string; };
 
