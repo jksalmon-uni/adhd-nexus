@@ -18,6 +18,7 @@ type Reward = { title: string; cost: number; id: string; };
 type Ritual = { id: string; text: string; completed: boolean; lastCompletedDate: string; };
 
 export default function Home() {
+  // MARK: State & persistence
   // --- 0. DATA ISOLATION ---
   const [isDevMode, setIsDevMode] = useState(false);
   const SAVE_KEY = useMemo(() => isDevMode ? "dev-nexus-" : "prod-nexus-", [isDevMode]);
@@ -85,9 +86,10 @@ export default function Home() {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- 2. CORE FUNCTIONS (DEFINED BEFORE USE) ---
+  // MARK: Task & Ritual Funcs
   const playSound = (s: string) => { if (soundEnabled) { try { new Audio(`/sounds/${s}.mp3`).play(); } catch(e){} } };
 
-  const handleAddDump = (e?: React.FormEvent) => {
+  const handleAddDump = (e: React.SubmitEvent) => {
     if (e) e.preventDefault();
     if (!inputDump.trim()) return;
     setBrainDump((prev) => [inputDump, ...prev]);
@@ -98,6 +100,27 @@ export default function Home() {
     setIsDumpOpen(false);
     setIsVentMode(false);
     if(ventIntervalRef.current) clearInterval(ventIntervalRef.current);
+  };
+
+  const handleAddTask = (e: React.SubmitEvent) => {
+    e.preventDefault(); if (!inputValue.trim()) return; 
+    playSound('add_task');
+    setTasks([{ 
+      text: inputValue, 
+      duration: inputDuration, 
+      id: `${Date.now()}-${Math.random()}`,
+      date: inputDate, 
+      subTasks: [], 
+      priority: inputPriority 
+    }, 
+      ...tasks]);
+    setInputValue(""); setInputDuration(0); setInputPriority("med"); setShowDurationPicker(false);
+  };
+
+  const promoteToTask = (text: string, index: number) => {
+    setTasks([{ text, duration: 0, id: `${Date.now()}-${Math.random()}`, date: new Date().toISOString().split('T')[0], subTasks: [], priority: 'med' }, ...tasks]);
+    setBrainDump(brainDump.filter((_, i) => i !== index)); closeDumpMenu(); setOverwhelmMode(false); setActiveTab("focus");
+    confetti({ particleCount: 40 });
   };
 
   const completeTask = (taskId: string) => {
@@ -198,6 +221,7 @@ export default function Home() {
 
   if (!isLoaded) return null;
 
+  // MARK: User Interface
   return (
     <main className={`flex min-h-screen flex-col items-center font-sans transition-all duration-700 ${colorMap.bg} relative overflow-x-hidden`}>
       <div className="w-full max-w-md px-6 pb-24 relative z-10">
@@ -226,13 +250,13 @@ export default function Home() {
         <header className="mb-6 text-center mt-2">
           <h1 className={`text-4xl font-black mb-2 tracking-tight ${colorMap.textMain}`}>{overwhelmMode ? 'Focus on Breath.' : greeting}</h1>
           <button onClick={() => setOverwhelmMode(!overwhelmMode)} className={`text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-full transition-all ${overwhelmMode ? 'bg-emerald-500 text-white' : 'bg-blue-500/10 text-blue-400'}`}>
-            {overwhelmMode ? "I'm Better" : "⚠️ Overwhelmed"}
+            {overwhelmMode ? "I'm Better" : "⚠️ I'm Overwhelmed"}
           </button>
         </header>
 
         {/* NAVIGATION */}
         <LayoutGroup>
-          <nav className={`grid ${overwhelmMode ? 'grid-cols-1 max-w-[140px] mx-auto' : 'grid-cols-4'} gap-1 p-1.5 rounded-2xl mb-8 ${isDark ? 'bg-zinc-900' : 'bg-slate-200'}`}>
+          <nav className={`grid ${overwhelmMode ? 'grid-cols-1 max-w-35 mx-auto' : 'grid-cols-4'} gap-1 p-1.5 rounded-2xl mb-8 ${isDark ? 'bg-zinc-900' : 'bg-slate-200'}`}>
             {!overwhelmMode && (
               <>
                 <button onClick={() => setActiveTab("focus")} className={`relative py-3.5 rounded-xl text-[10px] font-bold capitalize transition-all flex flex-col items-center gap-1 ${activeTab === "focus" ? 'text-white' : 'text-zinc-500'}`}>
@@ -275,7 +299,7 @@ export default function Home() {
 
                 <div className="space-y-4">
                   {tasks.filter(t => t.date === new Date().toISOString().split('T')[0]).map((t, i) => (
-                    <motion.div layout key={`${t.id}-${i}`} className={`p-6 rounded-[32px] border-2 ${colorMap.card}`}>
+                    <motion.div layout key={`${t.id}-${i}`} className={`p-6 rounded-4xl border-2 ${colorMap.card}`}>
                       <div className="flex justify-between items-center">
                         <span className="font-bold">{t.text}</span>
                         <div className="flex gap-2">
@@ -292,7 +316,7 @@ export default function Home() {
       </div>
 
       {/* BRAIN DUMP BUTTON */}
-      <motion.button onClick={() => setIsDumpOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center text-3xl z-40 bg-amber-400 text-zinc-900"><Brain /></motion.button>
+      <motion.button onClick={() => setIsDumpOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center text-3xl z-40 bg-amber-400 text-zinc-900"><Brain /></motion.button>
 
       {/* BRAIN DUMP DRAWER (WHERE THE ERROR WAS) */}
       <AnimatePresence>
@@ -305,8 +329,8 @@ export default function Home() {
                 <button onClick={closeDumpMenu} className="w-10 h-10 rounded-full bg-zinc-900/10 flex items-center justify-center"><X size={20}/></button>
               </div>
               <form onSubmit={handleAddDump} className="flex gap-3 mb-10">
-                <input value={inputDump} onChange={e => setInputDump(e.target.value)} placeholder="Get it out of your head..." className="flex-1 bg-white border-2 rounded-[24px] px-6 py-4 text-zinc-900" />
-                <button type="submit" className="bg-zinc-900 text-white px-8 rounded-[24px] font-bold"><Plus /></button>
+                <input value={inputDump} onChange={e => setInputDump(e.target.value)} placeholder="Get it out of your head..." className="flex-1 bg-white border-2 rounded-3xl px-6 py-4 text-zinc-900" />
+                <button type="submit" className="bg-zinc-900 text-white px-8 rounded-3xl font-bold"><Plus /></button>
               </form>
               <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
                 {brainDump.map((dump, i) => (
@@ -324,10 +348,10 @@ export default function Home() {
       {/* HOURGLASS MODAL */}
       <AnimatePresence>
         {focusTask && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`fixed inset-0 z-[60] flex flex-col items-center justify-center p-12 ${colorMap.bg}`}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`fixed inset-0 z-60 flex flex-col items-center justify-center p-12 ${colorMap.bg}`}>
                 <button onClick={() => setFocusTask(null)} className="absolute top-12 right-8 px-6 py-3 rounded-full border font-black uppercase text-[10px]">Abort</button>
                 <h2 className="text-3xl font-black text-center mb-12">{focusTask.text}</h2>
-                <div className="w-full max-w-sm flex items-center justify-center relative aspect-[1/1.5] mb-8">
+                <div className="w-full max-w-sm flex items-center justify-center relative aspect-1/1.5 mb-8">
                     <svg viewBox="0 0 100 200" className="w-full h-full drop-shadow-2xl">
                         {/* Sand Logic using Stencil */}
                         <motion.rect x="20" width="60" className="fill-emerald-500" animate={{ y: 20 + (focusCompletionRatio * 75), height: 75 - (focusCompletionRatio * 75) }} transition={{ ease: "linear", duration: 1 }} />
