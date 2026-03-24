@@ -2,13 +2,14 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { 
-  Target, Calendar as CalIcon, Leaf, Gem, 
-  Settings, Brain, CheckCircle2, X, Plus, 
-  Zap, ArrowLeft, ArrowRight, History, Play, Trash2, 
+import {
+  Target, Calendar as CalIcon, Leaf, Gem,
+  Settings, Brain, CheckCircle2, X, Plus,
+  Zap, History, Play,
   CloudRain, Coffee, Headphones, Timer, CheckSquare,
   Gift, TimerReset
 } from "lucide-react";
+import CalendarTab from "./components/CalendarTab"; // fix: import CalendarTab from "components/CalendarTab";
 
 // --- TYPES ---
 type Priority = "low" | "med" | "high" | "urgent";
@@ -36,8 +37,6 @@ export default function Home() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [overwhelmMode, setOverwhelmMode] = useState(false); 
   const [mysteryPrize, setMysteryPrize] = useState<string | null>(null);
-  const [viewDate, setViewDate] = useState(new Date());
-  const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("month");
 
   // --- ECONOMY & GENTLE STREAKS ---
   const [points, setPoints] = useState(0);
@@ -311,6 +310,10 @@ export default function Home() {
                   ))}
                 </div>
             </motion.div>
+          )}
+
+          {activeTab === "calendar" && !overwhelmMode && (
+            <CalendarTab tasks={tasks} isDark={isDark} />
           )}
         </AnimatePresence>
       </div>
