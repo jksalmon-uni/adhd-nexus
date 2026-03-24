@@ -17,6 +17,7 @@ import RechargeTab from "./components/Tabs/RechargeTab";
 import RewardsTab from "./components/Tabs/RewardsTab";
 import MysteryPrizeModal from "./components/Modals/MysteryPrizeModal";
 import BrainDumpDrawer from "./components/Modals/BrainDumpDrawer";
+import HourGlassModal from "./components/Modals/HourGlassModal";
 
 import type { Task, Priority, Reward } from "./types";
 
@@ -192,6 +193,12 @@ export default function Home() {
 
   // --- 4. THEME & MATH ---
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+  }, [isDark]);
+
   const colorMap = {
     bg: overwhelmMode ? (isDark ? "bg-slate-950 text-blue-100" : "bg-blue-50 text-slate-900") : (isDark ? "bg-zinc-950 text-white" : "bg-stone-50 text-slate-900"),
     card: isDark ? "bg-zinc-900 border-zinc-800 shadow-xl" : "bg-white border-slate-200 shadow-sm",
@@ -337,28 +344,15 @@ export default function Home() {
         onPromoteToTask={promoteToTask}
       />
 
-      {/* HOURGLASS MODAL */}
-      <AnimatePresence>
-        {focusTask && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`fixed inset-0 z-60 flex flex-col items-center justify-center p-12 ${colorMap.bg}`}>
-                <button onClick={() => setFocusTask(null)} className="absolute top-12 right-8 px-6 py-3 rounded-full border font-black uppercase text-[10px]">Abort</button>
-                <h2 className="text-3xl font-black text-center mb-12">{focusTask.text}</h2>
-                <div className="w-full max-w-sm flex items-center justify-center relative aspect-1/1.5 mb-8">
-                    <svg viewBox="0 0 100 200" className="w-full h-full drop-shadow-2xl">
-                        {/* Sand Logic using Stencil */}
-                        <motion.rect x="20" width="60" className="fill-emerald-500" animate={{ y: 20 + (focusCompletionRatio * 75), height: 75 - (focusCompletionRatio * 75) }} transition={{ ease: "linear", duration: 1 }} />
-                        <motion.rect x="49" y="95" width="2" className="fill-emerald-500" animate={{ height: 85 - (focusCompletionRatio * 75), opacity: focusRemainingSeconds > 0 ? 1 : 0 }} transition={{ ease: "linear", duration: 1 }} />
-                        <motion.rect x="20" width="60" className="fill-emerald-500" animate={{ y: 180 - (focusCompletionRatio * 75), height: focusCompletionRatio * 75 }} transition={{ ease: "linear", duration: 1 }} />
-                        <path d="M 0 0 h 100 v 200 h -100 Z M 20 20 C 20 65 43 85 50 95 C 57 85 80 65 80 20 Z M 50 105 C 43 115 20 135 20 180 L 80 180 C 80 135 57 115 50 105 Z" fill="currentColor" className={colorMap.stencilColor} fillRule="evenodd" />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center text-6xl font-mono font-black">
-                        {Math.floor(focusRemainingSeconds / 60)}:{(focusRemainingSeconds % 60).toString().padStart(2, '0')}
-                    </div>
-                </div>
-            </motion.div>
-        )}
-      </AnimatePresence>
       {/* Modals */}
+      <HourGlassModal
+        focusTask={focusTask}
+        focusRemainingSeconds={focusRemainingSeconds}
+        focusCompletionRatio={focusCompletionRatio}
+        bgClass={colorMap.bg}
+        stencilColorClass={colorMap.stencilColor}
+        onClose={() => setFocusTask(null)}
+      />
       <MysteryPrizeModal prize={mysteryPrize} onClaim={() => setMysteryPrize(null)} />
       <WinLogModal
         isOpen={isVaultOpen}
