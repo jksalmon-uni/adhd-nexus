@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckSquare } from "lucide-react";
 
-import type { Task } from "../types";
+import type { Task } from "../../types";
 
 type Properties = {
   isOpen: boolean;

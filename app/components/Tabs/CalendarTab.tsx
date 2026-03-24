@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-import type { Task } from "../types";
+import type { Task } from "../../types";
 
 type Properties = {
   tasks: Task[];

@@ -98,9 +98,9 @@ export default function BrainDumpDrawer({ isOpen, onClose, isDark, overwhelmMode
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     placeholder="Get it out of your head..."
-                    className={`flex-1 border-2 rounded-[24px] px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/20 ${dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`}
+                    className={`flex-1 border-2 rounded-3xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/20 ${dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`}
                   />
-                  <button type="submit" className={`text-white px-8 flex items-center justify-center rounded-[24px] font-bold text-2xl ${overwhelmMode ? 'bg-blue-600' : 'bg-zinc-900'}`}>
+                  <button type="submit" className={`text-white px-8 flex items-center justify-center rounded-3xl font-bold text-2xl ${overwhelmMode ? 'bg-blue-600' : 'bg-zinc-900'}`}>
                     <Plus />
                   </button>
                 </form>
@@ -129,7 +129,7 @@ export default function BrainDumpDrawer({ isOpen, onClose, isDark, overwhelmMode
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   placeholder="Type fast! Don't overthink it..."
-                  className={`w-full h-48 border-2 rounded-[24px] p-6 outline-none resize-none ${dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`}
+                  className={`w-full h-48 border-2 rounded-3xl p-6 outline-none resize-none ${dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`}
                 />
                 <p className="text-xs opacity-50 mt-4 font-bold uppercase tracking-widest">Will auto-save when timer hits 0</p>
               </div>

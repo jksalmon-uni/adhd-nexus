@@ -10,13 +10,13 @@ import {
   Gift, TimerReset
 } from "lucide-react";
 
-import CalendarTab from "./components/CalendarTab";
-import SettingsModal from "./components/SettingsModal";
-import WinLogModal from "./components/WinLogModal";
-import RechargeTab from "./components/RechargeTab";
-import RewardsTab from "./components/RewardsTab";
-import MysteryPrizeModal from "./components/MysteryPrizeModal";
-import BrainDumpDrawer from "./components/BrainDumpDrawer";
+import CalendarTab from "./components/Tabs/CalendarTab";
+import SettingsModal from "./components/Modals/SettingsModal";
+import WinLogModal from "./components/Modals/WinLogModal";
+import RechargeTab from "./components/Tabs/RechargeTab";
+import RewardsTab from "./components/Tabs/RewardsTab";
+import MysteryPrizeModal from "./components/Modals/MysteryPrizeModal";
+import BrainDumpDrawer from "./components/Modals/BrainDumpDrawer";
 
 import type { Task, Priority, Reward } from "./types";
 

@@ -4,7 +4,7 @@ import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
 import { Gift, Plus, X } from "lucide-react";
 
-import type { Reward } from "../types";
+import type { Reward } from "../../types";
 
 type Properties = {
   isDark: boolean;
