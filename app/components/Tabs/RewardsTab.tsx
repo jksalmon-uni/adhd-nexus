@@ -16,6 +16,19 @@ type Properties = {
   playSound: (s: string) => void;
 };
 
+// Rewards tab lets the user redeem points for custom rewards or a random mystery prize, and manage their reward list
+// Props defined above
+// Example usage:
+// <RewardsTab
+//   isDark={false}
+//   points={120}
+//   rewards={[{ title: "Watch an episode of TV", cost: 20, id: "1" }]}
+//   onSpendPoints={(amt) => setPoints(points - amt)}
+//   onRewardsChange={(newRewards) => setRewards(newRewards)}
+//   onMysteryWin={(prize) => alert(`You won: ${prize}`)}
+//   playSound={(s) => console.log(`Play sound: ${s}`)}
+// />
+
 export default function RewardsTab({ isDark, points, rewards, onSpendPoints, onRewardsChange, onMysteryWin, playSound }: Properties) {
   const [newTitle, setNewTitle] = useState("");
   const [newCost, setNewCost] = useState<number | "">("");

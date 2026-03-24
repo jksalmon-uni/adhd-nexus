@@ -7,6 +7,14 @@ type Properties = {
   onClaim: () => void;
 };
 
+// MysteryPrizeModal component displays a random prize won by the user when they redeem points for a mystery box
+// properties defined above
+// Example usage:
+// <MysteryPrizeModal
+//   prize={mysteryPrize} // string or null
+//   onClaim={() => setMysteryPrize(null)} // function to call when user claims the prize
+// />
+
 export default function MysteryPrizeModal({ prize, onClaim }: Properties) {
   return (
     <AnimatePresence>

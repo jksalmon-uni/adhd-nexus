@@ -11,9 +11,6 @@ type Properties = {
 };
 
 /// CalendarTab component displays tasks in a calendar format with month, week, and day views
-/// inputs:
-/// - tasks: An array of task objects, each containing text, duration, id, and date.
-/// - isDark: A boolean indicating whether the dark theme is active.
 /// example usage:
 /// <CalendarTab tasks={[{ text: "Task 1", duration: 30, id: "1", date: "2024-06-01" }]} isDark={false} />
 

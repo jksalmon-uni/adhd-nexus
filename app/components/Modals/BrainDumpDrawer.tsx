@@ -14,6 +14,24 @@ type Properties = {
   onPromoteToTask: (text: string, index: number) => void;
 };
 
+// BrainDumpDrawer component provides a space for users to quickly jot down thoughts, ideas, or worries without the pressure of organizing them
+// Features a vent mode with a 60-second timer to encourage free-flowing thoughts, and auto-saves when the timer expires
+// Users can also promote notes to tasks or delete them
+// Example usage:
+// <BrainDumpDrawer
+//   isOpen={isBrainDumpOpen}
+//   onClose={() => setIsBrainDumpOpen(false)}
+//   isDark={isDark}
+//   overwhelmMode={overwhelmMode}
+//   brainDump={brainDump}
+//   onAddNote={(text) => setBrainDump([...brainDump, text])}
+//   onDeleteNote={(index) => setBrainDump(brainDump.filter((_, i) => i !== index))}
+//   onPromoteToTask={(text, index) => {
+//     setTasks([...tasks, { text, id: Date.now().toString(), duration: 0, date: new Date().toISOString() }]);
+//     setBrainDump(brainDump.filter((_, i) => i !== index));
+//   }}
+// />
+
 export default function BrainDumpDrawer({ isOpen, onClose, isDark, overwhelmMode, brainDump, onAddNote, onDeleteNote, onPromoteToTask }: Properties) {
   const [input, setInput] = useState("");
   const [isVentMode, setIsVentMode] = useState(false);

@@ -23,6 +23,11 @@ type Properties = {
   isDark: boolean;
 };
 
+// RechargeTab component provides quick self-care activities to help users reset and refocus
+// Each activity is represented as a button with an icon and title, and triggers a confetti animation when clicked
+// Example usage:
+// <RechargeTab isDark={false} />
+
 export default function RechargeTab({ isDark }: Properties) {
   const card        = isDark ? "bg-zinc-900 border-zinc-800 shadow-xl" : "bg-white border-slate-200 shadow-sm";
   const iconBg      = isDark ? "bg-zinc-800" : "bg-slate-100";

@@ -11,6 +11,16 @@ type Properties = {
   completedTasks: Task[];
 };
 
+// WinLogModal component displays a log of completed tasks as proof of wins, with a date stamp for each entry
+// Props defined above
+// Example usage:
+// <WinLogModal
+//   isOpen={isWinLogOpen}
+//   onClose={() => setIsWinLogOpen(false)}
+//   isDark={isDark} // boolean for theme
+//   completedTasks={[{ text: "Completed Task", id: "1", date: "2024-06-01" }]}
+// />
+
 export default function WinLogModal({ isOpen, onClose, isDark, completedTasks }: Properties) {
   const card = isDark ? "bg-zinc-900 border-zinc-800 shadow-xl" : "bg-white border-slate-200 shadow-sm";
 
