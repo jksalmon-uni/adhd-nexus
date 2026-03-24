@@ -11,7 +11,7 @@ export default function MysteryPrizeModal({ prize, onClaim }: Properties) {
   return (
     <AnimatePresence>
       {prize && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[70] flex items-center justify-center p-6">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-70 flex items-center justify-center p-6">
           <motion.div
             initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
