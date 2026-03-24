@@ -17,3 +17,11 @@ export type SubTask = {
 export type Priority = "low" | "med" | "high" | "urgent";
 
 export type Reward = { title: string; cost: number; id: string; };
+
+// rituals types for consistent usage across components
+export type Ritual = { 
+    id: string; 
+    text: string; 
+    completed: boolean; 
+    lastCompletedDate: string; 
+};
