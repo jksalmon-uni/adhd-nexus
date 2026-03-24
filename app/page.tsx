@@ -200,12 +200,18 @@ export default function Home() {
   }, [isDark]);
 
   const colorMap = {
-    bg: overwhelmMode ? (isDark ? "bg-slate-950 text-blue-100" : "bg-blue-50 text-slate-900") : (isDark ? "bg-zinc-950 text-white" : "bg-stone-50 text-slate-900"),
-    card: isDark ? "bg-zinc-900 border-zinc-800 shadow-xl" : "bg-white border-slate-200 shadow-sm",
-    input: isDark ? "bg-zinc-800 text-white border-zinc-700" : "bg-white text-slate-900 border-slate-300",
-    textMain: isDark ? "text-zinc-100" : "text-slate-900",
-    tabActive: overwhelmMode ? (isDark ? 'bg-blue-900/40 text-blue-400 border border-blue-400/30' : 'bg-white text-blue-600 shadow-md') : (isDark ? "bg-zinc-800 text-emerald-400 border-emerald-500/20" : "bg-white text-emerald-600 shadow-md"),
-    stencilColor: overwhelmMode ? (isDark ? 'text-slate-950' : 'text-blue-50') : (isDark ? 'text-zinc-950' : 'text-stone-50'),
+    bg: overwhelmMode
+      ? "bg-blue-50 text-slate-900 dark:bg-slate-950 dark:text-blue-100"
+      : "bg-stone-50 text-slate-900 dark:bg-zinc-950 dark:text-white",
+    card: "bg-white border-slate-200 shadow-sm dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-xl",
+    input: "bg-white text-slate-900 border-slate-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-700",
+    textMain: "text-slate-900 dark:text-zinc-100",
+    tabActive: overwhelmMode
+      ? "bg-white text-blue-600 shadow-md dark:bg-blue-900/40 dark:text-blue-400 dark:border dark:border-blue-400/30"
+      : "bg-white text-emerald-600 shadow-md dark:bg-zinc-800 dark:text-emerald-400 dark:border-emerald-500/20",
+    stencilColor: overwhelmMode
+      ? "text-blue-50 dark:text-slate-950"
+      : "text-stone-50 dark:text-zinc-950",
   };
 
   const focusCompletionRatio = useMemo(() => {
@@ -225,11 +231,11 @@ export default function Home() {
         <div className="flex justify-between items-start pt-8 pb-4">
           <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-black ${isDark ? 'bg-zinc-900 border border-zinc-800 text-emerald-400' : 'bg-white shadow-sm text-emerald-600'}`}>
+                <div className="w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-black bg-white shadow-sm text-emerald-600 dark:bg-zinc-900 dark:border dark:border-zinc-800 dark:text-emerald-400">
                     <span className="text-[8px] opacity-50 -mb-1">LVL</span>{Math.floor(totalXp / 100) + 1}
                 </div>
                 <div className="flex flex-col gap-1">
-                    <div className={`w-24 h-1.5 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-slate-200'} overflow-hidden`}>
+                    <div className="w-24 h-1.5 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
                         <motion.div initial={{ width: 0 }} animate={{ width: `${totalXp % 100}%` }} className="h-full bg-emerald-500" />
                     </div>
                 </div>
@@ -238,7 +244,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <button onClick={() => setIsVaultOpen(true)} className={`p-2.5 rounded-xl ${colorMap.card} flex items-center justify-center`}><History size={18}/></button>
             <button onClick={() => setIsSettingsOpen(true)} className={`p-2.5 rounded-xl ${colorMap.card} flex items-center justify-center`}><Settings size={18}/></button>
-            <div className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-xl border ${isDark ? 'border-amber-500/20 text-amber-400 bg-zinc-900' : 'border-amber-300 text-amber-600 bg-amber-50'}`}><span>💎</span>{points}</div>
+            <div className="px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-xl border border-amber-300 text-amber-600 bg-amber-50 dark:border-amber-500/20 dark:text-amber-400 dark:bg-zinc-900"><span>💎</span>{points}</div>
           </div>
         </div>
 
@@ -251,7 +257,7 @@ export default function Home() {
 
         {/* NAVIGATION */}
         <LayoutGroup>
-          <nav className={`grid ${overwhelmMode ? 'grid-cols-1 max-w-35 mx-auto' : 'grid-cols-4'} gap-1 p-1.5 rounded-2xl mb-8 ${isDark ? 'bg-zinc-900' : 'bg-slate-200'}`}>
+          <nav className={`grid ${overwhelmMode ? 'grid-cols-1 max-w-35 mx-auto' : 'grid-cols-4'} gap-1 p-1.5 rounded-2xl mb-8 bg-slate-200 dark:bg-zinc-900`}>
             {!overwhelmMode && (
               <>
                 <button onClick={() => setActiveTab("focus")} className={`relative py-3.5 rounded-xl text-[10px] font-bold capitalize transition-all flex flex-col items-center gap-1 ${activeTab === "focus" ? 'text-white' : 'text-zinc-500'}`}>
@@ -288,7 +294,7 @@ export default function Home() {
                         {inputDuration > 0 ? `⏱️ ${inputDuration}m` : "Estimate?"}
                     </button>
                   </div>
-                  {showDurationPicker && <div className="flex gap-2">{[5, 15, 30, 60].map(m => <button key={m} type="button" onClick={() => setInputDuration(m)} className={`flex-1 py-2 rounded-xl text-xs font-black ${inputDuration === m ? 'bg-emerald-500 text-white' : 'bg-zinc-800'}`}>{m}m</button>)}</div>}
+                  {showDurationPicker && <div className="flex gap-2">{[5, 15, 30, 60].map(m => <button key={m} type="button" onClick={() => setInputDuration(m)} className={`flex-1 py-2 rounded-xl text-xs font-black ${inputDuration === m ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-zinc-800'}`}>{m}m</button>)}</div>}
                   <button type="submit" className="bg-emerald-600 py-4 rounded-2xl font-black text-white hover:bg-emerald-500 transition-all">Add Task</button>
                 </form>
 
@@ -309,16 +315,15 @@ export default function Home() {
           )}
 
           {activeTab === "calendar" && !overwhelmMode && (
-            <CalendarTab tasks={tasks} isDark={isDark} />
+            <CalendarTab tasks={tasks} />
           )}
 
           {activeTab === "recharge" && (
-            <RechargeTab isDark={isDark} />
+            <RechargeTab />
           )}
 
           {activeTab === "rewards" && !overwhelmMode && (
             <RewardsTab
-              isDark={isDark}
               points={points}
               rewards={rewards}
               onSpendPoints={(amount) => setPoints(p => p - amount)}
@@ -336,7 +341,6 @@ export default function Home() {
       <BrainDumpDrawer
         isOpen={isDumpOpen}
         onClose={() => setIsDumpOpen(false)}
-        isDark={isDark}
         overwhelmMode={overwhelmMode}
         brainDump={brainDump}
         onAddNote={(text) => setBrainDump(prev => [text, ...prev])}
@@ -357,7 +361,6 @@ export default function Home() {
       <WinLogModal
         isOpen={isVaultOpen}
         onClose={() => setIsVaultOpen(false)}
-        isDark={isDark}
         completedTasks={completedTasks}
       />
       <SettingsModal

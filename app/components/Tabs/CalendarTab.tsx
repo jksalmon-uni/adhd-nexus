@@ -7,21 +7,15 @@ import type { Task } from "../../types";
 
 type Properties = {
   tasks: Task[];
-  isDark: boolean;
 };
 
 /// CalendarTab component displays tasks in a calendar format with month, week, and day views
 /// example usage:
-/// <CalendarTab tasks={[{ text: "Task 1", duration: 30, id: "1", date: "2024-06-01" }]} isDark={false} />
+/// <CalendarTab tasks={[{ text: "Task 1", duration: 30, id: "1", date: "2024-06-01" }]} />
 
-export default function CalendarTab({ tasks, isDark }: Properties) {
+export default function CalendarTab({ tasks }: Properties) {
   const [viewDate, setViewDate] = useState(new Date());
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("month");
-
-  // to do: consider moving styles to global definitions for consistency between views
-  const textMuted = isDark ? "text-zinc-500" : "text-slate-400";
-  const textMain = isDark ? "text-zinc-100" : "text-slate-900";
-  const card = isDark ? "bg-zinc-900 border-zinc-800 shadow-xl" : "bg-white border-slate-200 shadow-sm";
 
   const navigate = (direction: 1 | -1) => {
     const d = new Date(viewDate);
@@ -46,9 +40,9 @@ export default function CalendarTab({ tasks, isDark }: Properties) {
         <button
           key={`day-${d}`}
           onClick={() => { setViewDate(new Date(ds)); setCalendarView("day"); }}
-          className={`h-12 border ${isDark ? "border-zinc-800" : "border-slate-100"} flex flex-col items-center p-1 rounded-lg transition-colors hover:bg-emerald-500/10`}
+          className="h-12 border border-slate-100 dark:border-zinc-800 flex flex-col items-center p-1 rounded-lg transition-colors hover:bg-emerald-500/10"
         >
-          <span className={`text-[9px] font-bold ${isToday ? "bg-emerald-500 text-white rounded-full w-4 h-4 flex items-center justify-center" : textMuted}`}>{d}</span>
+          <span className={`text-[9px] font-bold ${isToday ? "bg-emerald-500 text-white rounded-full w-4 h-4 flex items-center justify-center" : "text-slate-400 dark:text-zinc-500"}`}>{d}</span>
           <div className="flex gap-0.5 mt-1">
             {dt.slice(0, 3).map((_, i) => <div key={`dot-${d}-${i}`} className="w-1 h-1 rounded-full bg-emerald-400" />)}
           </div>
@@ -82,12 +76,12 @@ export default function CalendarTab({ tasks, isDark }: Properties) {
             <button
               key={`week-${i}`}
               onClick={() => { setViewDate(d); setCalendarView("day"); }}
-              className={`p-4 rounded-2xl border flex flex-col items-center gap-1 transition-all ${isToday ? "bg-emerald-500/10 border-emerald-500" : card}`}
+              className={`p-4 rounded-2xl border flex flex-col items-center gap-1 transition-all ${isToday ? "bg-emerald-500/10 border-emerald-500" : "bg-white border-slate-200 shadow-sm dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-xl"}`}
             >
               <span className="text-[10px] font-black opacity-40 uppercase">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][i]}
               </span>
-              <span className={`text-xl font-bold ${isToday ? "text-emerald-500" : textMain}`}>{d.getDate()}</span>
+              <span className={`text-xl font-bold ${isToday ? "text-emerald-500" : "text-slate-900 dark:text-zinc-100"}`}>{d.getDate()}</span>
               <span className="text-[10px] font-bold text-amber-500">{dt.length} tasks</span>
             </button>
           );
@@ -101,7 +95,7 @@ export default function CalendarTab({ tasks, isDark }: Properties) {
     const dt = tasks.filter(x => x.date === ds);
     return (
       <div className="animate-in zoom-in-95 duration-300">
-        <div className={`p-8 rounded-[40px] text-center mb-6 border ${card}`}>
+        <div className="p-8 rounded-[40px] text-center mb-6 border bg-white border-slate-200 shadow-sm dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-xl">
           <p className="text-xs font-black uppercase opacity-40 mb-1">
             {viewDate.toLocaleDateString("default", { weekday: "long" })}
           </p>
@@ -114,7 +108,7 @@ export default function CalendarTab({ tasks, isDark }: Properties) {
           {dt.length === 0
             ? <p className="text-center py-10 opacity-40 italic">No tasks today.</p>
             : dt.map(t => (
-              <div key={t.id} className={`p-5 rounded-2xl border flex justify-between items-center ${card}`}>
+              <div key={t.id} className="p-5 rounded-2xl border flex justify-between items-center bg-white border-slate-200 shadow-sm dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-xl">
                 <span className="font-bold text-sm">{t.text}</span>
                 <span className="text-[10px] opacity-40 font-bold">{t.duration || 5}m</span>
               </div>
@@ -127,12 +121,12 @@ export default function CalendarTab({ tasks, isDark }: Properties) {
 
   return (
     <motion.div key="calendar-tab" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6 pt-4">
-      <div className={`flex p-1 rounded-2xl ${isDark ? "bg-zinc-900" : "bg-slate-200"}`}>
+      <div className="flex p-1 rounded-2xl bg-slate-200 dark:bg-zinc-900">
         {(["month", "week", "day"] as const).map(v => (
           <button
             key={`cal-toggle-${v}`}
             onClick={() => setCalendarView(v)}
-            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${calendarView === v ? (isDark ? "bg-zinc-800 text-emerald-400 shadow-sm" : "bg-white text-emerald-600 shadow-sm") : "opacity-40"}`}
+            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${calendarView === v ? "bg-white text-emerald-600 shadow-sm dark:bg-zinc-800 dark:text-emerald-400" : "opacity-40"}`}
           >
             {v}
           </button>
@@ -146,8 +140,8 @@ export default function CalendarTab({ tasks, isDark }: Properties) {
           {calendarView === "day" && viewDate.toLocaleDateString("default", { month: "short", day: "numeric" })}
         </h2>
         <div className="flex gap-2">
-          <button onClick={() => navigate(-1)} className={`p-2 rounded-lg border ${card}`}><ArrowLeft size={16} /></button>
-          <button onClick={() => navigate(1)} className={`p-2 rounded-lg border ${card}`}><ArrowRight size={16} /></button>
+          <button onClick={() => navigate(-1)} className="p-2 rounded-lg border bg-white border-slate-200 shadow-sm dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-xl"><ArrowLeft size={16} /></button>
+          <button onClick={() => navigate(1)} className="p-2 rounded-lg border bg-white border-slate-200 shadow-sm dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-xl"><ArrowRight size={16} /></button>
         </div>
       </div>
 

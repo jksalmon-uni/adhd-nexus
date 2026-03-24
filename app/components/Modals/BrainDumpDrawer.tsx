@@ -6,7 +6,6 @@ import { X, Plus, Timer, Trash2 } from "lucide-react";
 type Properties = {
   isOpen: boolean;
   onClose: () => void;
-  isDark: boolean;
   overwhelmMode: boolean;
   brainDump: string[];
   onAddNote: (text: string) => void;
@@ -21,7 +20,6 @@ type Properties = {
 // <BrainDumpDrawer
 //   isOpen={isBrainDumpOpen}
 //   onClose={() => setIsBrainDumpOpen(false)}
-//   isDark={isDark}
 //   overwhelmMode={overwhelmMode}
 //   brainDump={brainDump}
 //   onAddNote={(text) => setBrainDump([...brainDump, text])}
@@ -32,13 +30,11 @@ type Properties = {
 //   }}
 // />
 
-export default function BrainDumpDrawer({ isOpen, onClose, isDark, overwhelmMode, brainDump, onAddNote, onDeleteNote, onPromoteToTask }: Properties) {
+export default function BrainDumpDrawer({ isOpen, onClose, overwhelmMode, brainDump, onAddNote, onDeleteNote, onPromoteToTask }: Properties) {
   const [input, setInput] = useState("");
   const [isVentMode, setIsVentMode] = useState(false);
   const [ventTimer, setVentTimer] = useState(60);
   const ventIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const dumpCard = isDark ? "bg-zinc-800 border-zinc-700" : "bg-white border-zinc-900/5";
 
   // Auto-save when vent timer expires
   useEffect(() => {
@@ -93,11 +89,11 @@ export default function BrainDumpDrawer({ isOpen, onClose, isDark, overwhelmMode
           <motion.div
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto rounded-t-[50px] p-10 pb-16 z-50 shadow-2xl ${isDark ? 'bg-zinc-900' : 'bg-amber-50'}`}
+            className="fixed bottom-0 left-0 right-0 max-w-md mx-auto rounded-t-[50px] p-10 pb-16 z-50 shadow-2xl bg-amber-50 dark:bg-zinc-900"
           >
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>Notes</h2>
-              <button onClick={onClose} className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-white/10 text-white' : 'bg-zinc-900/10 text-zinc-900'}`}>
+              <h2 className="text-3xl font-black text-zinc-900 dark:text-white">Notes</h2>
+              <button onClick={onClose} className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-900/10 text-zinc-900 dark:bg-white/10 dark:text-white">
                 <X size={20} />
               </button>
             </div>
@@ -116,7 +112,7 @@ export default function BrainDumpDrawer({ isOpen, onClose, isDark, overwhelmMode
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     placeholder="Get it out of your head..."
-                    className={`flex-1 border-2 rounded-3xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/20 ${dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`}
+                    className="flex-1 border-2 rounded-3xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/20 bg-white border-zinc-900/5 text-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
                   />
                   <button type="submit" className={`text-white px-8 flex items-center justify-center rounded-3xl font-bold text-2xl ${overwhelmMode ? 'bg-blue-600' : 'bg-zinc-900'}`}>
                     <Plus />
@@ -125,8 +121,8 @@ export default function BrainDumpDrawer({ isOpen, onClose, isDark, overwhelmMode
 
                 <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
                   {brainDump.map((note, i) => (
-                    <motion.div layout key={`dump-${i}`} className={`p-5 rounded-[28px] flex justify-between items-center shadow-sm border ${dumpCard}`}>
-                      <span className={`text-sm font-bold leading-tight pr-6 ${isDark ? 'text-white' : 'text-zinc-800'}`}>{note}</span>
+                    <motion.div layout key={`dump-${i}`} className="p-5 rounded-[28px] flex justify-between items-center shadow-sm border bg-white border-zinc-900/5 dark:bg-zinc-800 dark:border-zinc-700">
+                      <span className="text-sm font-bold leading-tight pr-6 text-zinc-800 dark:text-white">{note}</span>
                       <div className="flex gap-2">
                         <button onClick={() => onPromoteToTask(note, i)} className="bg-zinc-900 text-white text-[10px] font-black px-5 py-3 rounded-2xl shrink-0">
                           TASKIFY
@@ -147,7 +143,7 @@ export default function BrainDumpDrawer({ isOpen, onClose, isDark, overwhelmMode
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   placeholder="Type fast! Don't overthink it..."
-                  className={`w-full h-48 border-2 rounded-3xl p-6 outline-none resize-none ${dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`}
+                  className="w-full h-48 border-2 rounded-3xl p-6 outline-none resize-none bg-white border-zinc-900/5 text-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
                 />
                 <p className="text-xs opacity-50 mt-4 font-bold uppercase tracking-widest">Will auto-save when timer hits 0</p>
               </div>

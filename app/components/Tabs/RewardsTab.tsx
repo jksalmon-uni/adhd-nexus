@@ -7,7 +7,6 @@ import { Gift, Plus, X } from "lucide-react";
 import type { Reward } from "../../types";
 
 type Properties = {
-  isDark: boolean;
   points: number;
   rewards: Reward[];
   onSpendPoints: (amount: number) => void;
@@ -20,7 +19,6 @@ type Properties = {
 // Props defined above
 // Example usage:
 // <RewardsTab
-//   isDark={false}
 //   points={120}
 //   rewards={[{ title: "Watch an episode of TV", cost: 20, id: "1" }]}
 //   onSpendPoints={(amt) => setPoints(points - amt)}
@@ -29,12 +27,9 @@ type Properties = {
 //   playSound={(s) => console.log(`Play sound: ${s}`)}
 // />
 
-export default function RewardsTab({ isDark, points, rewards, onSpendPoints, onRewardsChange, onMysteryWin, playSound }: Properties) {
+export default function RewardsTab({ points, rewards, onSpendPoints, onRewardsChange, onMysteryWin, playSound }: Properties) {
   const [newTitle, setNewTitle] = useState("");
   const [newCost, setNewCost] = useState<number | "">("");
-
-  const card = isDark ? "bg-zinc-900 border-zinc-800 shadow-xl" : "bg-white border-slate-200 shadow-sm";
-  const input = isDark ? "bg-zinc-800 text-white border-zinc-700" : "bg-white text-slate-900 border-slate-300";
 
   const openMysteryBox = () => {
     if (points < 30) return;
@@ -83,9 +78,9 @@ export default function RewardsTab({ isDark, points, rewards, onSpendPoints, onR
       </button>
 
       {/* Add reward form */}
-      <form onSubmit={addReward} className={`p-3 rounded-4xl mt-8 mb-6 flex items-center gap-2 border ${card} overflow-hidden`}>
-        <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Reward..." className={`flex-1 min-w-0 px-4 py-3 rounded-2xl text-sm border ${input}`} />
-        <input type="number" value={newCost} onChange={e => setNewCost(e.target.value === "" ? "" : Number(e.target.value))} placeholder="Cost" min="1" className={`w-24 px-3 py-3 rounded-2xl text-sm border ${input}`} />
+      <form onSubmit={addReward} className="p-3 rounded-4xl mt-8 mb-6 flex items-center gap-2 border bg-white border-slate-200 shadow-sm dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-xl overflow-hidden">
+        <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Reward..." className="flex-1 min-w-0 px-4 py-3 rounded-2xl text-sm border bg-white text-slate-900 border-slate-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-700" />
+        <input type="number" value={newCost} onChange={e => setNewCost(e.target.value === "" ? "" : Number(e.target.value))} placeholder="Cost" min="1" className="w-24 px-3 py-3 rounded-2xl text-sm border bg-white text-slate-900 border-slate-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-700" />
         <button type="submit" className="bg-purple-600 w-12 h-12 flex shrink-0 items-center justify-center rounded-2xl font-bold text-white">
           <Plus size={20} />
         </button>
@@ -96,9 +91,9 @@ export default function RewardsTab({ isDark, points, rewards, onSpendPoints, onR
         <div key={`reward-${r.id}-${i}`} className="relative group">
           <button
             onClick={() => redeemReward(r)}
-            className={`w-full flex justify-between items-center p-8 rounded-[36px] transition-all border ${points >= r.cost ? card + ' active:scale-95' : 'opacity-20 pointer-events-none border-transparent'}`}
+            className={`w-full flex justify-between items-center p-8 rounded-[36px] transition-all border ${points >= r.cost ? 'bg-white border-slate-200 shadow-sm dark:bg-zinc-900 dark:border-zinc-800 dark:shadow-xl active:scale-95' : 'opacity-20 pointer-events-none border-transparent'}`}
           >
-            <span className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-800'}`}>{r.title}</span>
+            <span className="font-black text-lg text-slate-800 dark:text-white">{r.title}</span>
             <span className="text-amber-500 font-black">{r.cost} 💎</span>
           </button>
           <button
