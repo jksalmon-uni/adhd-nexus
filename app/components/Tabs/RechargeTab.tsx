@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
 
 interface RechargeTabProps {
-  rechargeMenu: { title: string; icon: JSX.Element }[];
+  rechargeMenu: { title: string; icon: React.ReactNode }[];
   colorMap: any;
   isDark: boolean;
 }
