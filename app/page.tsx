@@ -11,13 +11,13 @@ import {
   Trash2, CheckSquare
 } from "lucide-react";
 
-import FocusModeModal from "./components/Modals/FocusModeModal";
 import SettingsModal from "./components/Modals/SettingsModal";
 import WinLogModal from "./components/Modals/WinLogModal";
 import MysteryPrizeModal from "./components/Modals/MysteryPrizeModal";
 import BrainDumpDrawer from "./components/Modals/BrainDumpDrawer";
 import FocusTimerModal from "./components/Modals/FocusTimerModal";
 import OverwhelmModal from "./components/Modals/OverwhelmModal";
+import BreathingModal from "./components/Modals/BreathingModal";
 
 import StatusBar from "./components/Layout/StatusBar";
 import Header from "./components/Layout/Header";
@@ -59,6 +59,8 @@ export default function Home() {
   );
   const [isVentMode, setIsVentMode] = useState(false);
   const [ventTimer, setVentTimer] = useState(60);
+  const [isBreathing, setIsBreathing] = useState(false);
+  const [waterIntake, setWaterIntake] = useState(0);
 
   // --- ECONOMY & GENTLE STREAKS ---
   const [points, setPoints] = useState(0);
@@ -67,6 +69,17 @@ export default function Home() {
   const DAILY_CAP = 250;
   const [gardenPlants, setGardenPlants] = useState<string[]>([]);
   const [lastPlantedDate, setLastPlantedDate] = useState<string>("");
+
+  const handleDrinkWater = () => {
+    if (waterIntake >= 8) return;
+    setWaterIntake(waterIntake + 1);
+    playSound("complete_task");
+    confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+    if (dailyPointsEarned < DAILY_CAP) {
+      setPoints((p) => p + 1);
+      setDailyPointsEarned((d) => d + 1);
+    }
+  };
 
   // --- DATA LISTS ---
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -90,25 +103,6 @@ export default function Home() {
     { title: "Watch 1 YouTube video", cost: 40, id: "r1" },
     { title: "Gaming Session (30m)", cost: 80, id: "r2" },
   ]);
-
-  const rechargeMenu = [
-    {
-      title: "2 Minute Meditation",
-      icon: <Zap className="text-yellow-400" />,
-    },
-    {
-      title: "Step outside for air",
-      icon: <Leaf className="text-emerald-400" />,
-    },
-    {
-      title: "Drink a glass of water",
-      icon: <Play className="text-blue-400 rotate-90" />,
-    },
-    {
-      title: "Quick 1-minute stretch",
-      icon: <Zap className="text-purple-400" />,
-    },
-  ];
 
   // --- INPUTS ---
   const [inputValue, setInputValue] = useState("");
@@ -142,6 +136,12 @@ export default function Home() {
   const abortOnFocus = () => {
     setFocusTask(null); setFocusRemainingSeconds(0);
   }
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
 
   const playSound = (s: string) => { if (soundEnabled) { try { new Audio(`/sounds/${s}.mp3`).play(); } catch(e){} } };
 
@@ -277,6 +277,7 @@ export default function Home() {
     load("overwhelm", setOverwhelmMode, (v) => v === "true");
     load("garden", setGardenPlants);
     load("last-plant", setLastPlantedDate, (v) => v);
+    load("water", setWaterIntake, (v) => parseInt(v, 10) || 0);
     const savedRituals = localStorage.getItem(SAVE_KEY + "rituals");
     if (savedRituals) {
       const parsedRituals: Ritual[] = JSON.parse(savedRituals);
@@ -288,6 +289,7 @@ export default function Home() {
     const rd = localStorage.getItem(SAVE_KEY + "reset-date");
     if (rd !== today) {
       setDailyPointsEarned(0);
+      setWaterIntake(0);
       localStorage.setItem(SAVE_KEY + "reset-date", today);
     } else {
       load("daily-points", setDailyPointsEarned, (v) => parseInt(v, 10) || 0);
@@ -319,6 +321,7 @@ export default function Home() {
       save("rituals", rituals);
       save("garden", gardenPlants);
       save("last-plant", lastPlantedDate);
+      save("water", waterIntake.toString());
     }
   }, [
     tasks,
@@ -336,6 +339,7 @@ export default function Home() {
     isLoaded,
     completedTasks,
     SAVE_KEY,
+    waterIntake,
   ]);
 
   // --- 4. THEME & MATH ---
@@ -658,9 +662,11 @@ export default function Home() {
 
             {activeTab === "recharge" && (
               <RechargeTab
-                rechargeMenu={rechargeMenu}
                 colorMap={colorMap}
                 isDark={isDark}
+                setIsBreathing={setIsBreathing}
+                waterIntake={waterIntake}
+                handleDrinkWater={handleDrinkWater}
               />
             )}
 
@@ -697,58 +703,42 @@ export default function Home() {
       </div>
 
       {/* --- FLOATING BRAIN DUMP BUTTON --- */}
-      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setIsDumpOpen(true)} className={`fixed bottom-8 right-8 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center text-3xl z-40 ${overwhelmMode ? 'bg-blue-500 text-white' : 'bg-amber-400 text-zinc-900'}`}><Brain /></motion.button>
+      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setIsDumpOpen(true)} className={`fixed bottom-8 right-8 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center text-3xl z-40 bg-amber-400 text-zinc-900`}><Brain /></motion.button>
 
-      {/* --- BRAIN DUMP DRAWER --- */}
-      <AnimatePresence>
-        {isDumpOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeDumpMenu} className="fixed inset-0 bg-black/60 backdrop-blur-md z-50" />
-            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }} className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto rounded-t-[50px] p-10 pb-16 z-50 shadow-2xl ${colorMap.dumpBg}`}>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className={`text-3xl font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>Notes</h2>
-                <button onClick={closeDumpMenu} className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-white/10 text-white' : 'bg-zinc-900/10 text-zinc-900'}`}><X size={20}/></button>
-              </div>
-
-              {!isVentMode ? (
-                <>
-                  <button onClick={triggerVentMode} className="w-full mb-6 p-4 rounded-2xl bg-amber-500 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"><Timer size={16}/> 60s Impulse Vent</button>
-                  <form onSubmit={handleAddDump} className="flex gap-3 mb-10">
-                    <input value={inputDump} onChange={e => setInputDump(e.target.value)} placeholder="Get it out of your head..." className={`flex-1 border-2 rounded-3xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/20 ${colorMap.dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`} />
-                    <button type="submit" className={`text-white px-8 flex items-center justify-center rounded-3xl font-bold text-2xl ${overwhelmMode ? 'bg-blue-600' : 'bg-zinc-900'}`}><Plus /></button>
-                  </form>
-                  <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
-                    {brainDump.map((dump, i) => (<motion.div layout key={`dump-${i}`} className={`p-5 rounded-[28px] flex justify-between items-center shadow-sm ${colorMap.dumpCard}`}><span className={`text-sm font-bold leading-tight pr-6 ${isDark ? 'text-white' : 'text-zinc-800'}`}>{dump}</span><div className="flex gap-2"><button onClick={() => promoteToTask(dump, i)} className="bg-zinc-900 text-white text-[10px] font-black px-5 py-3 rounded-2xl shrink-0">TASKIFY</button><button onClick={()=>setBrainDump(brainDump.filter((_, idx)=>idx!==i))} className="p-2 text-zinc-400 hover:text-rose-500"><Trash2 size={16}/></button></div></motion.div>))}
-                  </div>
-                </>
-              ) : (
-                <div className="animate-in fade-in flex flex-col items-center">
-                    <h3 className="text-5xl font-mono font-black text-rose-500 mb-6">{ventTimer}s</h3>
-                    <textarea autoFocus value={inputDump} onChange={e => setInputDump(e.target.value)} placeholder="Type fast! Don't overthink it..." className={`w-full h-48 border-2 rounded-3xl p-6 outline-none resize-none ${colorMap.dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`} />
-                    <p className="text-xs opacity-50 mt-4 font-bold uppercase tracking-widest">Will auto-save when timer hits 0</p>
-                </div>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <BrainDumpDrawer
+        isDumpOpen={isDumpOpen}
+        closeDumpMenu={closeDumpMenu}
+        colorMap={colorMap}
+        isDark={isDark}
+        overwhelmMode={overwhelmMode}
+        isVentMode={isVentMode}
+        triggerVentMode={triggerVentMode}
+        handleAddDump={handleAddDump}
+        inputDump={inputDump}
+        setInputDump={setInputDump}
+        brainDump={brainDump}
+        promoteToTask={promoteToTask}
+        setBrainDump={setBrainDump}
+        ventTimer={ventTimer}
+      />
 
         {/* Modals */}
-        <FocusModeModal
-        focusTask={focusTask}
-        focusRemainingSeconds={focusRemainingSeconds}
-        focusCompletionRatio={focusCompletionRatio}
-        bgClass={colorMap.bg}
-        cardClass={colorMap.card}
-        textMainClass={colorMap.textMain}
-        textMutedClass={colorMap.textMuted}
-        hourglassSandClass={colorMap.hourglassSand}
-        stencilColorClass={colorMap.stencilColor}
-        isDark={isDark}
+      <AnimatePresence>
+        {isBreathing && <BreathingModal onClose={() => setIsBreathing(false)} />}
+      </AnimatePresence>
+
+      <FocusTimerModal
+        focusTask={focusTask || null}
+        setFocusTask={setFocusTask}
         ambientTrack={ambientTrack}
-        onAmbientTrackChange={setAmbientTrack}
-        onClose={() => abortOnFocus()}
-        />
+        setAmbientTrack={setAmbientTrack}
+        colorMap={colorMap}
+        isDark={isDark}
+        focusCompletionRatio={focusCompletionRatio}
+        focusRemainingSeconds={focusRemainingSeconds}
+        formatTime={formatTime}
+        onComplete={() => focusTask && handleCompleteTask(focusTask.id)}
+      />
 
       <MysteryPrizeModal
         prize={mysteryPrize}
