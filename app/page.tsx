@@ -2,9 +2,20 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Leaf, Play, Zap, Droplet, RefreshCw } from "lucide-react";
+import {
+  Brain,
+  Leaf,
+  Play,
+  Zap,
+  Droplet,
+  RefreshCw,
+  Gift,
+  Plus,
+  X,
+  History,
+  Settings,
+} from "lucide-react";
 
-import SettingsModal from "./components/Modals/SettingsModal";
 import WinLogModal from "./components/Modals/WinLogModal";
 import MysteryPrizeModal from "./components/Modals/MysteryPrizeModal";
 import BrainDumpDrawer from "./components/Modals/BrainDumpDrawer";
@@ -13,15 +24,48 @@ import OverwhelmModal from "./components/Modals/OverwhelmModal";
 import BreathingModal from "./components/Modals/BreathingModal";
 import GroundingModal from "./components/Modals/GroundingModal";
 
-import StatusBar from "./components/Layout/StatusBar";
 import Header from "./components/Layout/Header";
 import Navigation from "./components/Layout/Navigation";
 
 import FocusTab from "./components/Tabs/FocusTab";
 import CalendarTab from "./components/Tabs/CalendarTab";
-import RewardsTab from "./components/Tabs/RewardsTab";
 
-import type { Task, Priority, Reward, Ritual } from "./types";
+// Inlined Types from types.ts
+export type Task = {
+  text: string;
+  duration: number;
+  id: string;
+  date: string;
+  subTasks: SubTask[];
+  priority: Priority;
+};
+export type SubTask = { text: string; completed: boolean; id: string };
+export type Priority = "low" | "med" | "high" | "urgent";
+export type Reward = {
+  title: string;
+  cost: number;
+  id: string;
+  duration: number;
+};
+export type Ritual = {
+  id: string;
+  text: string;
+  completed: boolean;
+  lastCompletedDate: string;
+};
+export type Theme = "light" | "dark" | "system";
+
+const useSystemTheme = () => {
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => setIsDark(mediaQuery.matches);
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+  return isDark ? "dark" : "light";
+};
 
 export default function Home() {
   // MARK: State & persistence
@@ -37,7 +81,7 @@ export default function Home() {
   >("focus");
   const [greeting, setGreeting] = useState("Hello!");
   const [isLoaded, setIsLoaded] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<Theme>('system');
 
   // --- UI TOGGLES ---
   const [isDumpOpen, setIsDumpOpen] = useState(false);
@@ -61,19 +105,32 @@ export default function Home() {
   const [points, setPoints] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
   const [dailyPointsEarned, setDailyPointsEarned] = useState(0);
-  const DAILY_CAP = 250;
+  const DAILY_CEILING = 300;
   const [gardenPlants, setGardenPlants] = useState<string[]>([]);
   const [lastPlantedDate, setLastPlantedDate] = useState<string>("");
+
+  const awardPoints = (amount: number) => {
+    let economicMultiplier = 1.0;
+    if (dailyPointsEarned >= DAILY_CEILING) {
+      economicMultiplier = 0;
+    } else if (dailyPointsEarned >= 200) {
+      economicMultiplier = 0.5;
+    }
+
+    const earned = Math.floor(amount * economicMultiplier);
+
+    if (earned > 0) {
+      setPoints((p) => p + earned);
+      setDailyPointsEarned((d) => d + earned);
+    }
+  };
 
   const handleDrinkWater = () => {
     if (waterIntake >= 8) return;
     setWaterIntake(waterIntake + 1);
     playSound("complete_task");
     confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-    if (dailyPointsEarned < DAILY_CAP) {
-      setPoints((p) => p + 1);
-      setDailyPointsEarned((d) => d + 1);
-    }
+    awardPoints(1);
   };
 
   const playSound = useCallback(
@@ -99,7 +156,6 @@ export default function Home() {
     setBubbleState(Array(12).fill(false));
   }, []);
 
-  // Automatic reset for Bubble Pop
   useEffect(() => {
     if (bubbleState.length > 0 && bubbleState.every(Boolean)) {
       const resetTimer = setTimeout(() => {
@@ -110,16 +166,9 @@ export default function Home() {
           scalar: 1.2,
         });
         playSound("level_up");
-
-        if (dailyPointsEarned < DAILY_CAP) {
-          const awarded = Math.min(5, DAILY_CAP - dailyPointsEarned);
-          setPoints((p) => p + awarded);
-          setDailyPointsEarned((d) => d + awarded);
-        }
-
+        awardPoints(5);
         resetBubbles();
       }, 300);
-
       return () => clearTimeout(resetTimer);
     }
   }, [bubbleState, dailyPointsEarned, playSound, resetBubbles]);
@@ -129,11 +178,7 @@ export default function Home() {
       setGroundingStep(groundingStep + 1);
     } else {
       confetti({ particleCount: 150, spread: 100 });
-      if (dailyPointsEarned < DAILY_CAP) {
-        const awarded = Math.min(5, DAILY_CAP - dailyPointsEarned);
-        setPoints((p) => p + awarded);
-        setDailyPointsEarned((d) => d + awarded);
-      }
+      awardPoints(5);
       setGroundingStep(0);
     }
   };
@@ -161,8 +206,8 @@ export default function Home() {
     },
   ]);
   const [rewards, setRewards] = useState<Reward[]>([
-    { title: "Watch 1 YouTube video", cost: 40, id: "r1" },
-    { title: "Gaming Session (30m)", cost: 80, id: "r2" },
+    { title: "Watch 1 YouTube video", duration: 15, cost: 15, id: "r1" },
+    { title: "Gaming Session", duration: 30, cost: 30, id: "r2" },
   ]);
 
   // --- INPUTS ---
@@ -175,7 +220,7 @@ export default function Home() {
   );
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [newRewardTitle, setNewRewardTitle] = useState("");
-  const [newRewardCost, setNewRewardCost] = useState<number | "">("");
+  const [newRewardDuration, setNewRewardDuration] = useState<number>(15);
   const [randomTaskId, setRandomTaskId] = useState<string | null>(null);
 
   // --- TIMER & AUDIO REFS ---
@@ -193,7 +238,6 @@ export default function Home() {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- 2. CORE FUNCTIONS (DEFINED BEFORE USE) ---
-  // MARK: Task & Ritual Funcs
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -247,22 +291,19 @@ export default function Home() {
     setCompletedTasks((prev) =>
       [{ ...t, date: new Date().toISOString() }, ...prev].slice(0, 50)
     );
-    const subScaling =
-      t.subTasks.length > 0
-        ? t.subTasks.filter((s) => s.completed).length / t.subTasks.length
-        : 1;
-    const priorityBonus =
-      t.priority === "urgent" ? 1.5 : t.priority === "high" ? 1.2 : 1;
-    const earned = Math.max(
-      1,
-      Math.floor((t.duration || 5) * subScaling * priorityBonus)
-    );
+
+    const priorityMultipliers = {
+      low: 0.7,
+      med: 1,
+      high: 1.5,
+      urgent: 2,
+    };
+    const multiplier = priorityMultipliers[t.priority] || 1;
+    const baseGems = t.duration > 0 ? t.duration : 5;
+    const potentialGems = Math.floor(baseGems * multiplier);
+    awardPoints(potentialGems);
+
     setTotalXp((x) => x + (t.duration || 5));
-    if (dailyPointsEarned < DAILY_CAP) {
-      const allowed = Math.min(earned, DAILY_CAP - dailyPointsEarned);
-      setPoints((p) => p + allowed);
-      setDailyPointsEarned((d) => d + allowed);
-    }
     setTasks((prev) => prev.filter((x) => x.id !== taskId));
     setRandomTaskId(null);
     setFocusTask(null);
@@ -323,8 +364,25 @@ export default function Home() {
     load("tasks", setTasks);
     load("dump", setBrainDump);
     load("completed", setCompletedTasks);
-    load("rewards", setRewards);
-    load("theme", setTheme, (v) => v);
+    load("rewards", (loadedRewards: any) => {
+      if (!Array.isArray(loadedRewards)) return;
+      const migratedRewards = loadedRewards
+        .map((r: any) => {
+          if (!r || typeof r.id === "undefined") return null;
+          if (typeof r.duration === "undefined") {
+            const duration = r.cost || 15;
+            return { ...r, duration, cost: duration };
+          }
+          return { ...r, cost: r.duration };
+        })
+        .filter(Boolean);
+      setRewards(migratedRewards as Reward[]);
+    });
+    load("theme", (val: any) => {
+      if (["light", "dark", "system"].includes(val)) {
+        setTheme(val);
+      }
+    });
     load("points", setPoints, (v) => parseInt(v, 10) || 0);
     load("xp", setTotalXp, (v) => parseInt(v, 10) || 0);
     load("settings-sounds", setSoundEnabled, (v) => v === "true");
@@ -397,7 +455,13 @@ export default function Home() {
   ]);
 
   // --- 4. THEME & MATH ---
-  const isDark = theme === "dark";
+  const systemTheme = useSystemTheme();
+  const isDark = useMemo(() => {
+    if (theme === "system") {
+      return systemTheme === "dark";
+    }
+    return theme === "dark";
+  }, [theme, systemTheme]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -458,15 +522,16 @@ export default function Home() {
     setRituals(
       rituals.map((r) =>
         r.id === id
-          ? { ...r, completed: true, lastCompletedDate: new Date().toLocaleDateString() }
+          ? {
+              ...r,
+              completed: true,
+              lastCompletedDate: new Date().toLocaleDateString(),
+            }
           : r
       )
     );
     setTotalXp((x) => x + 5);
-    if (dailyPointsEarned < DAILY_CAP) {
-      setPoints((p) => p + 5);
-      setDailyPointsEarned((d) => d + 5);
-    }
+    awardPoints(5);
     triggerGardenGrowth();
   };
 
@@ -620,13 +685,54 @@ export default function Home() {
         )}
       </AnimatePresence>
       <div className="w-full max-w-md px-6 pb-24 relative z-10">
-        <StatusBar
-          totalXp={totalXp}
-          points={points}
-          colorMap={colorMap}
-          setIsVaultOpen={setIsVaultOpen}
-          setIsSettingsOpen={setIsSettingsOpen}
-        />
+        <div className="flex justify-between items-start pt-8 pb-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-black bg-white shadow-sm text-emerald-600 dark:bg-zinc-900 dark:border dark:border-zinc-800 dark:text-emerald-400">
+                <span className="text-[8px] opacity-50 -mb-1">LVL</span>
+                {Math.floor(totalXp / 100) + 1}
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="w-24 h-1.5 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${totalXp % 100}%` }}
+                    className="h-full bg-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsVaultOpen(true)}
+                className={`p-2.5 rounded-xl ${colorMap.card} flex items-center justify-center`}
+              >
+                <History size={18} />
+              </button>
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className={`p-2.5 rounded-xl ${colorMap.card} flex items-center justify-center`}
+              >
+                <Settings size={18} />
+              </button>
+              <div className="px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-xl border border-amber-300 text-amber-600 bg-amber-50 dark:border-amber-500/20 dark:text-amber-400 dark:bg-zinc-900">
+                <span>💎</span>
+                {points}
+              </div>
+            </div>
+            <div
+              className={`text-xs font-bold px-2 ${
+                dailyPointsEarned >= DAILY_CEILING
+                  ? "text-rose-500"
+                  : colorMap.textMuted
+              }`}
+            >
+              Daily Limit: {dailyPointsEarned} / {DAILY_CEILING}
+            </div>
+          </div>
+        </div>
 
         <Header
           greeting={greeting}
@@ -702,12 +808,29 @@ export default function Home() {
 
                 <div className={`p-7 rounded-[40px] ${colorMap.card} shadow-sm`}>
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-800'}`}>Water Intake</h3>
-                    <span className="font-black text-amber-500">{waterIntake} / 8</span>
+                    <h3
+                      className={`font-bold text-xl ${
+                        isDark ? "text-white" : "text-slate-800"
+                      }`}
+                    >
+                      Water Intake
+                    </h3>
+                    <span className="font-black text-amber-500">
+                      {waterIntake} / 8
+                    </span>
                   </div>
                   <div className="grid grid-cols-8 gap-2 mb-4">
                     {Array.from({ length: 8 }).map((_, i) => (
-                      <div key={`water-dot-${i}`} className={`h-2 rounded-full ${i < waterIntake ? 'bg-blue-400' : isDark ? 'bg-zinc-800' : 'bg-slate-200'}`} />
+                      <div
+                        key={`water-dot-${i}`}
+                        className={`h-2 rounded-full ${
+                          i < waterIntake
+                            ? "bg-blue-400"
+                            : isDark
+                            ? "bg-zinc-800"
+                            : "bg-slate-200"
+                        }`}
+                      />
                     ))}
                   </div>
                   <motion.button
@@ -723,8 +846,16 @@ export default function Home() {
 
                 <div className={`p-7 rounded-[40px] ${colorMap.card} shadow-sm`}>
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-800'}`}>Bubble Pop</h3>
-                    <button onClick={resetBubbles}><RefreshCw size={14} className={colorMap.textMuted}/></button>
+                    <h3
+                      className={`font-bold text-xl ${
+                        isDark ? "text-white" : "text-slate-800"
+                      }`}
+                    >
+                      Bubble Pop
+                    </h3>
+                    <button onClick={resetBubbles}>
+                      <RefreshCw size={14} className={colorMap.textMuted} />
+                    </button>
                   </div>
                   <div className="grid grid-cols-4 gap-4">
                     {bubbleState.map((isPopped, i) => (
@@ -735,8 +866,8 @@ export default function Home() {
                         transition={{ duration: 0.2 }}
                         className={`w-12 h-12 rounded-full transition-all duration-200 focus:outline-none ${
                           isPopped
-                            ? 'bg-purple-300 shadow-[inset_0_4px_8px_rgba(0,0,0,0.1)]'
-                            : 'bg-purple-200 shadow-[0_4px_8px_rgba(0,0,0,0.15),inset_0_-4px_8px_rgba(0,0,0,0.1)]'
+                            ? "bg-purple-300 shadow-[inset_0_4px_8px_rgba(0,0,0,0.1)]"
+                            : "bg-purple-200 shadow-[0_4px_8px_rgba(0,0,0,0.15),inset_0_-4px_8px_rgba(0,0,0,0.1)]"
                         }`}
                       />
                     ))}
@@ -778,20 +909,146 @@ export default function Home() {
             )}
 
             {activeTab === "rewards" && (
-              <RewardsTab
-                points={points}
-                setPoints={setPoints}
-                openMysteryBox={openMysteryBox}
-                newRewardTitle={newRewardTitle}
-                setNewRewardTitle={setNewRewardTitle}
-                newRewardCost={newRewardCost}
-                setNewRewardCost={setNewRewardCost}
-                rewards={rewards}
-                setRewards={setRewards}
-                colorMap={colorMap}
-                isDark={isDark}
-                playSound={playSound}
-              />
+              <div className="space-y-4 pt-4">
+                <button
+                  onClick={openMysteryBox}
+                  className={`w-full flex justify-between items-center p-8 rounded-[36px] transition-all border border-purple-500/50 bg-purple-500/10 shadow-lg ${
+                    points >= 30
+                      ? "active:scale-95 hover:bg-purple-500/20"
+                      : "opacity-40 pointer-events-none"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-3xl p-3 bg-purple-500 text-white rounded-2xl">
+                      <Gift size={24} />
+                    </span>
+                    <div className="flex flex-col items-start">
+                      <span className="font-black text-lg text-purple-500">
+                        Mystery Box
+                      </span>
+                      <span className="text-xs font-bold opacity-60">
+                        A fun gamble!
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-amber-500 font-black">30 💎</span>
+                </button>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!newRewardTitle || !newRewardDuration) return;
+                    setRewards([
+                      {
+                        title: newRewardTitle,
+                        duration: newRewardDuration,
+                        cost: newRewardDuration,
+                        id: Date.now().toString(),
+                      },
+                      ...rewards,
+                    ]);
+                    setNewRewardTitle("");
+                    setNewRewardDuration(15);
+                  }}
+                  className={`p-4 rounded-4xl mt-8 mb-6 flex flex-col gap-3 ${colorMap.card}`}
+                >
+                  <h3
+                    className={`text-center font-bold ${
+                      isDark ? "text-white" : "text-slate-800"
+                    }`}
+                  >
+                    Add Custom Reward
+                  </h3>
+                  <input
+                    value={newRewardTitle}
+                    onChange={(e) => setNewRewardTitle(e.target.value)}
+                    placeholder="Reward Name (e.g. 'Play a game')"
+                    className={`w-full px-4 py-3 rounded-2xl text-sm ${colorMap.input}`}
+                  />
+                  <label
+                    className={`text-center text-xs font-bold mb-1 ${colorMap.textMuted}`}
+                  >
+                    How much time is this reward worth?
+                  </label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[
+                      { label: "5m", value: 5 },
+                      { label: "15m", value: 15 },
+                      { label: "30m", value: 30 },
+                      { label: "1h", value: 60 },
+                      { label: "2h", value: 120 },
+                    ].map((d) => (
+                      <button
+                        type="button"
+                        key={d.value}
+                        onClick={() => setNewRewardDuration(d.value)}
+                        className={`px-2 py-2 text-xs font-bold rounded-lg transition-colors ${
+                          newRewardDuration === d.value
+                            ? "bg-purple-600 text-white"
+                            : isDark
+                            ? "bg-zinc-800"
+                            : "bg-slate-100"
+                        }`}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="submit"
+                    className="bg-purple-600 w-full h-12 flex items-center justify-center rounded-2xl font-bold text-white mt-2"
+                  >
+                    <Plus size={20} className="mr-2" />
+                    Add Reward
+                  </button>
+                </form>
+
+                {rewards.map((r, i) => (
+                  <div key={`reward-${r.id}-${i}`} className="relative group">
+                    <button
+                      onClick={() => {
+                        if (points >= r.cost) {
+                          setPoints((p) => p - r.cost);
+                          playSound("redeem");
+                          confetti();
+                        }
+                      }}
+                      className={`w-full flex justify-between items-center p-6 rounded-[32px] transition-all border ${
+                        points >= r.cost
+                          ? colorMap.card + " active:scale-95"
+                          : "opacity-30 pointer-events-none border-transparent"
+                      }`}
+                    >
+                      <div className="flex flex-col items-start text-left">
+                        <span
+                          className={`font-bold text-lg ${
+                            isDark ? "text-white" : "text-slate-800"
+                          }`}
+                        >
+                          {r.title}
+                        </span>
+                        <span
+                          className={`text-xs font-semibold ${colorMap.textMuted}`}
+                        >
+                          Time Value: {r.duration}m
+                        </span>
+                      </div>
+                      <span className="text-amber-500 font-black text-lg">
+                        {r.cost} 💎
+                      </span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRewards(rewards.filter((x) => x.id !== r.id));
+                      }}
+                      className="absolute -top-3 -right-3 bg-rose-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-black opacity-0 group-hover:opacity-100 shadow-xl transition-all"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
@@ -846,14 +1103,68 @@ export default function Home() {
         onClose={() => setIsVaultOpen(false)}
         completedTasks={completedTasks}
       />
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        isDark={isDark}
-        onToggleTheme={() => setTheme(isDark ? "light" : "dark")}
-        soundEnabled={soundEnabled}
-        onToggleSound={() => setSoundEnabled(!soundEnabled)}
-      />
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-sm rounded-[48px] p-10 border shadow-2xl bg-white border-slate-200 dark:bg-zinc-900 dark:border-zinc-800"
+            >
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-black">Settings</h2>
+                <button
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <label className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
+                    Theme
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {(["light", "dark", "system"] as Theme[]).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setTheme(t)}
+                        className={`py-3 px-2 text-sm font-bold rounded-xl capitalize transition-colors flex items-center justify-center gap-2 ${
+                          theme === t
+                            ? "bg-emerald-500 text-white"
+                            : "bg-slate-100 dark:bg-zinc-800"
+                        }`}
+                      >
+                        <span>
+                          {t === "light"
+                            ? "☀️"
+                            : t === "dark"
+                            ? "🌙"
+                            : "🖥️"}
+                        </span>
+                        <span>{t}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-zinc-500 dark:text-zinc-400">
+                    Sound
+                  </label>
+                  <button
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className="w-full mt-2 p-6 rounded-3xl text-left border-2 font-bold bg-slate-50 border-slate-200 dark:bg-zinc-800 dark:border-zinc-700"
+                  >
+                    {soundEnabled ? "🔊 Sounds On" : "🔇 Sounds Muted"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
