@@ -1,9 +1,17 @@
 "use client";
 import { useState, useEffect, useRef, useMemo } from "react";
 import confetti from "canvas-confetti";
-import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Leaf, Play, Zap } from "lucide-react";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import {
+  Target, Calendar as CalIcon, Leaf, Gem,
+  Settings, Brain, CheckCircle2,
+  Zap, History, Play, X,
+  Timer,
+  Gift, TimerReset, Plus, ArrowLeft, ArrowRight,
+  Trash2, CheckSquare
+} from "lucide-react";
 
+import FocusModeModal from "./components/Modals/FocusModeModal";
 import SettingsModal from "./components/Modals/SettingsModal";
 import WinLogModal from "./components/Modals/WinLogModal";
 import MysteryPrizeModal from "./components/Modals/MysteryPrizeModal";
@@ -131,13 +139,12 @@ export default function Home() {
 
   // --- 2. CORE FUNCTIONS (DEFINED BEFORE USE) ---
   // MARK: Task & Ritual Funcs
-  const playSound = (s: string) => {
-    if (soundEnabled) {
-      try {
-        new Audio(`/sounds/${s}.mp3`).play();
-      } catch (e) {}
-    }
-  };
+  const abortOnFocus = () => {
+    setFocusTask(null); setFocusRemainingSeconds(0);
+  }
+
+  const playSound = (s: string) => { if (soundEnabled) { try { new Audio(`/sounds/${s}.mp3`).play(); } catch(e){} } };
+
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -376,12 +383,6 @@ export default function Home() {
     );
   }, [focusTask, focusRemainingSeconds]);
 
-  const formatTime = (totalSeconds: number) => {
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
-
   const triggerGardenGrowth = () => {
     const today = new Date().toLocaleDateString();
     if (lastPlantedDate !== today) {
@@ -464,26 +465,71 @@ export default function Home() {
     if (ventIntervalRef.current) clearInterval(ventIntervalRef.current);
   };
 
+  // probabilities must add to 1
+  const mysteryBoxPrizes= [
+    {
+      title: "Free Pass on 1 Chore",
+      probability: 0.50,
+    },
+    {
+      title: "Take a 20 min Nap",
+      probability: 0.30,
+    },
+    {
+      title: "Buy a small treat",
+      probability: 0.20,
+    },
+  ];
+
   const openMysteryBox = () => {
-    if (points < 30) return;
-    setPoints((p) => p - 30);
-    playSound("redeem");
-    confetti({
-      particleCount: 150,
-      spread: 100,
-      colors: ["#a855f7", "#fcd34d", "#3b82f6"],
-    });
-    const fallbackPrizes = [
-      "Free Pass on 1 Chore",
-      "Take a 20 min Nap",
-      "Buy a small treat",
-      "Order Takeout tonight",
-    ];
-    const won = [
-      ...rewards.map((r) => r.title),
-      ...fallbackPrizes,
-    ][Math.floor(Math.random() * (rewards.length + 4))];
-    setMysteryPrize(won);
+  if (points < 30) return;
+  setPoints(p => p - 30);
+  playSound('redeem');
+  confetti({ particleCount: 150, spread: 100, colors: ['#a855f7', '#fcd34d', '#3b82f6'] });
+
+  // combine rewards and mystery prizes into one pool
+  const prizePool = [
+    ...rewards.map(r => ({ title: r.title, probability: 0.5 / rewards.length })),
+    ...mysteryBoxPrizes,
+  ];
+
+  let roll = Math.random();
+  let won = prizePool[prizePool.length - 1].title; // fallback to last if something goes wrong
+
+  for (const prize of prizePool) {
+    roll -= prize.probability;
+    if (roll <= 0) {
+      won = prize.title;
+      break;
+    }
+  }
+
+  setMysteryPrize(won);
+};
+
+
+  const renderMonthView = () => {
+    const year = viewDate.getFullYear(), month = viewDate.getMonth(), days = [], daysInMonth = new Date(year, month + 1, 0).getDate(), firstDay = new Date(year, month, 1).getDay();
+    for (let i = 0; i < firstDay; i++) days.push(<div key={`empty-${i}`} className="h-12" />);
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, dt = tasks.filter(x => x.date === ds), isToday = new Date().toISOString().split('T')[0] === ds;
+      days.push(<button key={`day-${d}`} onClick={() => { setViewDate(new Date(ds)); setCalendarView("day"); }} className={`h-12 border ${isDark ? 'border-zinc-800' : 'border-slate-100'} flex flex-col items-center p-1 rounded-lg transition-colors hover:bg-emerald-500/10`}><span className={`text-[9px] font-bold ${isToday ? 'bg-emerald-500 text-white rounded-full w-4 h-4 flex items-center justify-center' : colorMap.textMuted}`}>{d}</span><div className="flex gap-0.5 mt-1">{dt.slice(0, 3).map((_, i) => <div key={`dot-${d}-${i}`} className="w-1 h-1 rounded-full bg-emerald-400" />)}</div></button>);
+    }
+    return <div className={`grid grid-cols-7 gap-1`}>{['S','M','T','W','T','F','S'].map((d,i)=><div key={`head-${d}-${i}`} className={`text-center py-2 text-[9px] font-black opacity-30`}>{d}</div>)}{days}</div>;
+  };
+
+  const renderWeekView = () => {
+    const sow = new Date(viewDate); sow.setDate(viewDate.getDate() - viewDate.getDay()); const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sow); d.setDate(sow.getDate() + i); const ds = d.toISOString().split('T')[0], dt = tasks.filter(x => x.date === ds), isT = new Date().toISOString().split('T')[0] === ds;
+      days.push(<button key={`week-${i}`} onClick={() => { setViewDate(d); setCalendarView("day"); }} className={`p-4 rounded-2xl border flex flex-col items-center gap-1 transition-all ${isT ? 'bg-emerald-500/10 border-emerald-500' : colorMap.card}`}><span className="text-[10px] font-black opacity-40 uppercase">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i]}</span><span className={`text-xl font-bold ${isT ? 'text-emerald-500' : colorMap.textMain}`}>{d.getDate()}</span><span className="text-[10px] font-bold text-amber-500">{dt.length} tasks</span></button>);
+    }
+    return <div className="grid grid-cols-1 gap-2 animate-in slide-in-from-right-4">{days}</div>;
+  };
+
+  const renderDayView = () => {
+    const ds = viewDate.toISOString().split('T')[0], dt = tasks.filter(x => x.date === ds);
+    return (<div className="animate-in zoom-in-95 duration-300"><div className={`p-8 rounded-[40px] text-center mb-6 ${colorMap.card}`}><p className="text-xs font-black uppercase opacity-40 mb-1">{viewDate.toLocaleDateString('default', { weekday: 'long' })}</p><h3 className="text-4xl font-black">{viewDate.getDate()}</h3><p className="text-sm opacity-60">{viewDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}</p></div><div className="space-y-3">{dt.length === 0 ? <p className="text-center py-10 opacity-40 italic">No tasks today.</p> : dt.map(t => (<div key={t.id} className={`p-5 rounded-2xl flex justify-between items-center ${colorMap.card}`}><span className="font-bold text-sm">{t.text}</span><span className="text-[10px] opacity-40 font-bold">{t.duration || 5}m</span></div>))}</div></div>);
   };
 
   const startHolding = (id: string) => {
@@ -651,44 +697,58 @@ export default function Home() {
       </div>
 
       {/* --- FLOATING BRAIN DUMP BUTTON --- */}
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setIsDumpOpen(true)}
-        className={`fixed bottom-8 right-8 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center text-3xl z-40 bg-amber-400 text-zinc-900`}
-      >
-        <Brain />
-      </motion.button>
+      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setIsDumpOpen(true)} className={`fixed bottom-8 right-8 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center text-3xl z-40 ${overwhelmMode ? 'bg-blue-500 text-white' : 'bg-amber-400 text-zinc-900'}`}><Brain /></motion.button>
 
-      <BrainDumpDrawer
-        isDumpOpen={isDumpOpen}
-        closeDumpMenu={closeDumpMenu}
-        colorMap={colorMap}
-        isDark={isDark}
-        isVentMode={isVentMode}
-        triggerVentMode={triggerVentMode}
-        handleAddDump={handleAddDump}
-        inputDump={inputDump}
-        setInputDump={setInputDump}
-        overwhelmMode={overwhelmMode}
-        brainDump={brainDump}
-        promoteToTask={promoteToTask}
-        setBrainDump={setBrainDump}
-        ventTimer={ventTimer}
-      />
+      {/* --- BRAIN DUMP DRAWER --- */}
+      <AnimatePresence>
+        {isDumpOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeDumpMenu} className="fixed inset-0 bg-black/60 backdrop-blur-md z-50" />
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }} className={`fixed bottom-0 left-0 right-0 max-w-md mx-auto rounded-t-[50px] p-10 pb-16 z-50 shadow-2xl ${colorMap.dumpBg}`}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className={`text-3xl font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>Notes</h2>
+                <button onClick={closeDumpMenu} className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-white/10 text-white' : 'bg-zinc-900/10 text-zinc-900'}`}><X size={20}/></button>
+              </div>
 
-      <FocusTimerModal
+              {!isVentMode ? (
+                <>
+                  <button onClick={triggerVentMode} className="w-full mb-6 p-4 rounded-2xl bg-amber-500 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"><Timer size={16}/> 60s Impulse Vent</button>
+                  <form onSubmit={handleAddDump} className="flex gap-3 mb-10">
+                    <input value={inputDump} onChange={e => setInputDump(e.target.value)} placeholder="Get it out of your head..." className={`flex-1 border-2 rounded-3xl px-6 py-4 outline-none focus:ring-4 focus:ring-amber-500/20 ${colorMap.dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`} />
+                    <button type="submit" className={`text-white px-8 flex items-center justify-center rounded-3xl font-bold text-2xl ${overwhelmMode ? 'bg-blue-600' : 'bg-zinc-900'}`}><Plus /></button>
+                  </form>
+                  <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                    {brainDump.map((dump, i) => (<motion.div layout key={`dump-${i}`} className={`p-5 rounded-[28px] flex justify-between items-center shadow-sm ${colorMap.dumpCard}`}><span className={`text-sm font-bold leading-tight pr-6 ${isDark ? 'text-white' : 'text-zinc-800'}`}>{dump}</span><div className="flex gap-2"><button onClick={() => promoteToTask(dump, i)} className="bg-zinc-900 text-white text-[10px] font-black px-5 py-3 rounded-2xl shrink-0">TASKIFY</button><button onClick={()=>setBrainDump(brainDump.filter((_, idx)=>idx!==i))} className="p-2 text-zinc-400 hover:text-rose-500"><Trash2 size={16}/></button></div></motion.div>))}
+                  </div>
+                </>
+              ) : (
+                <div className="animate-in fade-in flex flex-col items-center">
+                    <h3 className="text-5xl font-mono font-black text-rose-500 mb-6">{ventTimer}s</h3>
+                    <textarea autoFocus value={inputDump} onChange={e => setInputDump(e.target.value)} placeholder="Type fast! Don't overthink it..." className={`w-full h-48 border-2 rounded-3xl p-6 outline-none resize-none ${colorMap.dumpCard} ${isDark ? 'text-white' : 'text-zinc-900'}`} />
+                    <p className="text-xs opacity-50 mt-4 font-bold uppercase tracking-widest">Will auto-save when timer hits 0</p>
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+        {/* Modals */}
+        <FocusModeModal
         focusTask={focusTask}
-        setFocusTask={setFocusTask}
-        ambientTrack={ambientTrack}
-        setAmbientTrack={setAmbientTrack}
-        colorMap={colorMap}
-        isDark={isDark}
-        focusCompletionRatio={focusCompletionRatio}
         focusRemainingSeconds={focusRemainingSeconds}
-        formatTime={formatTime}
-        onComplete={() => handleCompleteTask(focusTask!.id)}
-      />
+        focusCompletionRatio={focusCompletionRatio}
+        bgClass={colorMap.bg}
+        cardClass={colorMap.card}
+        textMainClass={colorMap.textMain}
+        textMutedClass={colorMap.textMuted}
+        hourglassSandClass={colorMap.hourglassSand}
+        stencilColorClass={colorMap.stencilColor}
+        isDark={isDark}
+        ambientTrack={ambientTrack}
+        onAmbientTrackChange={setAmbientTrack}
+        onClose={() => abortOnFocus()}
+        />
 
       <MysteryPrizeModal
         prize={mysteryPrize}
