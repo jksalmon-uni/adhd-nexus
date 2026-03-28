@@ -209,6 +209,13 @@ export default function Home() {
     confetti({ particleCount: 100 });
   };
 
+  const handleCompleteTask = (taskId: string) => {
+    if (focusIntervalRef.current) {
+      clearInterval(focusIntervalRef.current);
+    }
+    completeTask(taskId);
+  };
+
   const startFocusTimer = (t: Task, overrideMins?: number) => {
     if (focusIntervalRef.current) {
       clearInterval(focusIntervalRef.current);
@@ -219,8 +226,9 @@ export default function Home() {
     focusIntervalRef.current = setInterval(() => {
       setFocusRemainingSeconds((prev) => {
         if (prev <= 1) {
-          if (focusIntervalRef.current) clearInterval(focusIntervalRef.current);
-          completeTask(t.id);
+          if (focusIntervalRef.current) {
+            clearInterval(focusIntervalRef.current);
+          }
           return 0;
         }
         return prev - 1;
@@ -679,6 +687,7 @@ export default function Home() {
         focusCompletionRatio={focusCompletionRatio}
         focusRemainingSeconds={focusRemainingSeconds}
         formatTime={formatTime}
+        onComplete={() => handleCompleteTask(focusTask!.id)}
       />
 
       <MysteryPrizeModal

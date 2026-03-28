@@ -245,26 +245,12 @@ export default function FocusTab({
                     onTouchStart={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
-                      startFocusTimer(t, 5);
-                    }}
-                    className={`p-2 rounded-xl text-[10px] font-black uppercase transition-colors ${
-                      isDark
-                        ? "bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white"
-                        : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
-                    }`}
-                  >
-                    5m <TimerReset size={12} className="inline ml-1 mb-0.5" />
-                  </button>
-                  <button
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.stopPropagation();
                       startFocusTimer(t);
                     }}
-                    className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-colors"
+                    className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-colors flex items-center gap-2"
                   >
                     <Play size={14} fill="currentColor" />
+                    {t.duration > 0 && <span className="font-bold">{t.duration}m</span>}
                   </button>
                 </div>
               </div>

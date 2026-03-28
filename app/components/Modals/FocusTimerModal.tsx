@@ -12,6 +12,7 @@ interface FocusTimerModalProps {
   focusCompletionRatio: number;
   focusRemainingSeconds: number;
   formatTime: (time: number) => string;
+  onComplete: () => void;
 }
 
 export default function FocusTimerModal({
@@ -24,7 +25,10 @@ export default function FocusTimerModal({
   focusCompletionRatio,
   focusRemainingSeconds,
   formatTime,
+  onComplete,
 }: FocusTimerModalProps) {
+  const isTimerDone = focusRemainingSeconds === 0;
+
   return (
     <AnimatePresence>
       {focusTask && (
@@ -57,7 +61,7 @@ export default function FocusTimerModal({
               onClick={() => setFocusTask(null)}
               className={`px-6 py-3 rounded-full border font-bold uppercase tracking-widest text-[10px] active:scale-95 transition-all ${colorMap.card} ${colorMap.textMain}`}
             >
-              Abort
+              {isTimerDone ? "Close" : "Abort"}
             </button>
           </div>
 
@@ -204,6 +208,12 @@ export default function FocusTimerModal({
               </span>
             </div>
           </div>
+          <button
+            onClick={onComplete}
+            className="bg-emerald-500 text-white font-bold py-3 px-8 rounded-full text-lg"
+          >
+            {isTimerDone ? "Great!" : "Have you completed it?"}
+          </button>
         </motion.div>
       )}
     </AnimatePresence>
