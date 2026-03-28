@@ -14,12 +14,14 @@ import {
   X,
   History,
   Settings,
+  CloudRain,
+  Coffee,
+  Headphones
 } from "lucide-react";
 
 import WinLogModal from "./components/Modals/WinLogModal";
 import MysteryPrizeModal from "./components/Modals/MysteryPrizeModal";
 import BrainDumpDrawer from "./components/Modals/BrainDumpDrawer";
-import FocusTimerModal from "./components/Modals/FocusTimerModal";
 import OverwhelmModal from "./components/Modals/OverwhelmModal";
 import BreathingModal from "./components/Modals/BreathingModal";
 import GroundingModal from "./components/Modals/GroundingModal";
@@ -232,10 +234,13 @@ export default function Home() {
   const ventIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [focusRemainingSeconds, setFocusRemainingSeconds] = useState(0);
+  const [overtimeSeconds, setOvertimeSeconds] = useState(0);
+  const [isOvertime, setIsOvertime] = useState(false);
   const [holdingTaskId, setHoldingTaskId] = useState<string | null>(null);
   const [holdProgress, setHoldProgress] = useState(0);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- 2. CORE FUNCTIONS (DEFINED BEFORE USE) ---
   const formatTime = (seconds: number) => {
@@ -284,61 +289,100 @@ export default function Home() {
     confetti({ particleCount: 40 });
   };
 
-  const completeTask = (taskId: string) => {
-    const t = tasks.find((x) => x.id === taskId);
+  const endFocusSession = (completed: boolean) => {
+    const t = focusTask;
     if (!t) return;
-    playSound("complete_task");
-    setCompletedTasks((prev) =>
-      [{ ...t, date: new Date().toISOString() }, ...prev].slice(0, 50)
-    );
 
-    const priorityMultipliers = {
-      low: 0.7,
-      med: 1,
-      high: 1.5,
-      urgent: 2,
-    };
-    const multiplier = priorityMultipliers[t.priority] || 1;
-    const baseGems = t.duration > 0 ? t.duration : 5;
-    const potentialGems = Math.floor(baseGems * multiplier);
-    awardPoints(potentialGems);
+    if (completed) {
+      // Full reward logic for completed tasks
+      let overtimeMultiplier = 1.0;
+      if (isOvertime && overtimeSeconds > 300) {
+        overtimeMultiplier = 0.8;
+      }
 
-    setTotalXp((x) => x + (t.duration || 5));
-    setTasks((prev) => prev.filter((x) => x.id !== taskId));
-    setRandomTaskId(null);
+      const priorityMultipliers = { low: 0.7, med: 1, high: 1.5, urgent: 2.0 };
+      const priorityMultiplier = priorityMultipliers[t.priority] || 1;
+      const baseGems = t.duration > 0 ? t.duration : 5;
+      const potentialGems = baseGems * priorityMultiplier;
+      const finalGems = potentialGems * overtimeMultiplier;
+      awardPoints(finalGems);
+
+      playSound("complete_task");
+      setCompletedTasks((prev) =>
+        [{ ...t, date: new Date().toISOString() }, ...prev].slice(0, 50)
+      );
+      setTasks((prev) => prev.filter((x) => x.id !== t.id));
+      triggerGardenGrowth();
+      confetti({ particleCount: 100 });
+    } else {
+      // Abort logic
+      if (isOvertime) {
+        // Award points for original time if aborted during overtime
+        const priorityMultipliers = { low: 0.7, med: 1, high: 1.5, urgent: 2.0 };
+        const priorityMultiplier = priorityMultipliers[t.priority] || 1;
+        const baseGems = t.duration > 0 ? t.duration : 5;
+        const potentialGems = baseGems * priorityMultiplier;
+        awardPoints(potentialGems);
+      }
+    }
+
     setFocusTask(null);
-    triggerGardenGrowth();
-    confetti({ particleCount: 100 });
+    setRandomTaskId(null);
   };
 
   const handleCompleteTask = (taskId: string) => {
-    if (focusIntervalRef.current) {
-      clearInterval(focusIntervalRef.current);
+    if (focusTask?.id === taskId) {
+      endFocusSession(true);
+    } else {
+      // This handles completing a task from the main list while a focus session for another task is active
+      const t = tasks.find((x) => x.id === taskId);
+      if (!t) return;
+      playSound("complete_task");
+      setCompletedTasks((prev) =>
+        [{ ...t, date: new Date().toISOString() }, ...prev].slice(0, 50)
+      );
+      const priorityMultipliers = { low: 0.7, med: 1, high: 1.5, urgent: 2.0 };
+      const multiplier = priorityMultipliers[t.priority] || 1;
+      const baseGems = t.duration > 0 ? t.duration : 5;
+      awardPoints(baseGems * multiplier);
+      setTasks((prev) => prev.filter((x) => x.id !== taskId));
+      triggerGardenGrowth();
+      confetti({ particleCount: 100 });
     }
-    completeTask(taskId);
   };
 
+  const completeTask = (taskId: string) => {
+    handleCompleteTask(taskId);
+  };
+
+
   const startFocusTimer = (t: Task, overrideMins?: number) => {
-    if (focusIntervalRef.current) {
-      clearInterval(focusIntervalRef.current);
-    }
+    if (focusIntervalRef.current) clearInterval(focusIntervalRef.current);
+    if (overtimeIntervalRef.current) clearInterval(overtimeIntervalRef.current);
+
     const finalMins = overrideMins || (t.duration > 0 ? t.duration : 30);
     setFocusTask({ ...t, duration: finalMins });
     setFocusRemainingSeconds(finalMins * 60);
+    setIsOvertime(false);
+    setOvertimeSeconds(0);
+
     focusIntervalRef.current = setInterval(() => {
-      setFocusRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          if (focusIntervalRef.current) {
-            clearInterval(focusIntervalRef.current);
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
+      setFocusRemainingSeconds((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
   };
 
   // --- 3. PERSISTENCE ---
+  useEffect(() => {
+    // Start overtime timer when main timer finishes
+    if (focusTask && focusRemainingSeconds === 0 && !isOvertime) {
+      setIsOvertime(true);
+      if (focusIntervalRef.current) clearInterval(focusIntervalRef.current);
+      overtimeIntervalRef.current = setInterval(() => {
+        setOvertimeSeconds((s) => s + 1);
+      }, 1000);
+    }
+  }, [focusTask, focusRemainingSeconds, isOvertime]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       if (
@@ -411,7 +455,7 @@ export default function Home() {
       h < 12 ? "Good Morning!" : h < 18 ? "Keep Pushing." : "Good Evening."
     );
     setIsLoaded(true);
-  }, [SAVE_KEY]);
+  }, [SAVE_KEY])
 
   useEffect(() => {
     if (isLoaded) {
@@ -1081,18 +1125,89 @@ export default function Home() {
         ventTimer={ventTimer}
       />
 
-      <FocusTimerModal
-        focusTask={focusTask}
-        setFocusTask={setFocusTask}
-        ambientTrack={ambientTrack}
-        setAmbientTrack={setAmbientTrack}
-        colorMap={colorMap}
-        isDark={isDark}
-        focusCompletionRatio={focusCompletionRatio}
-        focusRemainingSeconds={focusRemainingSeconds}
-        formatTime={formatTime}
-        onComplete={() => focusTask && handleCompleteTask(focusTask.id)}
-      />
+      <AnimatePresence>
+        {focusTask && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-12 ${
+              isOvertime
+                ? isDark
+                  ? "bg-amber-950/95"
+                  : "bg-amber-50/95"
+                : colorMap.bg
+            } transition-colors duration-500`}
+          >
+            <div className="absolute top-12 left-0 right-0 px-8 flex justify-between items-center">
+              <div
+                className={`flex rounded-full p-1 border ${colorMap.card}`}
+              >
+                {(["none", "rain", "cafe", "lofi"] as const).map((a) => (
+                  <button
+                    key={`amb-${a}`}
+                    onClick={() => setAmbientTrack(a)}
+                    className={`p-3 rounded-full transition-all ${
+                      ambientTrack === a
+                        ? `${
+                            isOvertime ? "bg-amber-500" : "bg-emerald-500"
+                          } text-white shadow-lg`
+                        : `${colorMap.textMuted} hover:opacity-80`
+                    }`}
+                  >
+                    {a === "none" && <X size={16} />}
+                    {a === "rain" && <CloudRain size={16} />}
+                    {a === "cafe" && <Coffee size={16} />}
+                    {a === "lofi" && <Headphones size={16} />}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => endFocusSession(false)}
+                className={`px-6 py-3 rounded-full border font-bold uppercase tracking-widest text-xs active:scale-95 transition-all ${colorMap.card} ${colorMap.textMain}`}
+              >
+                {isOvertime ? "End Session" : "Abort"}
+              </button>
+            </div>
+
+            <h2
+              className={`text-3xl font-black text-center mb-2 transition-colors ${
+                isOvertime ? "text-amber-600 dark:text-amber-400" : colorMap.textMain
+              }`}
+            >
+              {isOvertime ? "Flow Zone" : focusTask.text}
+            </h2>
+            <p className={`text-sm font-bold ${isOvertime ? 'text-amber-500' : 'text-emerald-500'}`}>
+              {isOvertime ? 'In the final polish...' : 'Focusing...'}
+            </p>
+
+            <div className="my-8">
+              <div
+                className={`text-7xl font-mono font-black tabular-nums tracking-tighter drop-shadow-md bg-white/20 dark:bg-black/20 backdrop-blur-sm px-6 py-3 rounded-3xl transition-colors ${
+                  isOvertime
+                    ? "text-amber-600 dark:text-amber-400"
+                    : colorMap.textMain
+                }`}
+              >
+                {isOvertime
+                  ? `+ ${formatTime(overtimeSeconds)}`
+                  : formatTime(focusRemainingSeconds)}
+              </div>
+            </div>
+
+            <button
+              onClick={() => endFocusSession(true)}
+              className={`${
+                isOvertime
+                  ? "bg-amber-500 hover:bg-amber-600"
+                  : "bg-emerald-500 hover:bg-emerald-600"
+              } text-white font-bold py-4 px-10 rounded-full text-lg transition-colors`}
+            >
+              Have you completed it?
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <MysteryPrizeModal
         prize={mysteryPrize}
