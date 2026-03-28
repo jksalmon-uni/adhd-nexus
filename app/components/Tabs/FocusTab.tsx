@@ -1,0 +1,352 @@
+import { motion } from "framer-motion";
+import { Leaf, Play, TimerReset } from "lucide-react";
+import type { Task, Priority, Ritual } from "../../types";
+
+interface FocusTabProps {
+  rituals: Ritual[];
+  completeRitual: (id: string) => void;
+  colorMap: any;
+  isDark: boolean;
+  handleAddTask: (e: React.FormEvent) => void;
+  inputValue: string;
+  setInputValue: (value: string) => void;
+  inputDate: string;
+  setInputDate: (date: string) => void;
+  showDurationPicker: boolean;
+  setShowDurationPicker: (show: boolean) => void;
+  inputDuration: number;
+  setInputDuration: (duration: number) => void;
+  inputPriority: Priority;
+  setInputPriority: (priority: Priority) => void;
+  tasks: Task[];
+  setRandomTaskId: (id: string | null) => void;
+  holdingTaskId: string | null;
+  holdProgress: number;
+  startHolding: (id: string) => void;
+  stopHolding: () => void;
+  startFocusTimer: (task: Task, duration?: number) => void;
+  setTasks: (tasks: Task[]) => void;
+  getTaskStyles: (priority: Priority) => string;
+}
+
+export default function FocusTab({
+  rituals,
+  completeRitual,
+  colorMap,
+  isDark,
+  handleAddTask,
+  inputValue,
+  setInputValue,
+  inputDate,
+  setInputDate,
+  showDurationPicker,
+  setShowDurationPicker,
+  inputDuration,
+  setInputDuration,
+  inputPriority,
+  setInputPriority,
+  tasks,
+  setRandomTaskId,
+  holdingTaskId,
+  holdProgress,
+  startHolding,
+  stopHolding,
+  startFocusTimer,
+  setTasks,
+  getTaskStyles,
+}: FocusTabProps) {
+  return (
+    <div className="space-y-6">
+      {rituals.some((r) => !r.completed) && (
+        <div className={`p-5 rounded-4xl border ${colorMap.card} shadow-sm`}>
+          <h3 className="text-[10px] font-black uppercase opacity-40 mb-3 px-2 flex items-center gap-2">
+            <Leaf size={12} /> Morning Rituals
+          </h3>
+          <div className="space-y-2">
+            {rituals
+              .filter((r) => !r.completed)
+              .map((r, i) => (
+                <button
+                  key={`ritual-${r.id}-${i}`}
+                  onClick={() => completeRitual(r.id)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-sm transition-all ${
+                    isDark
+                      ? "bg-zinc-800/50 hover:bg-zinc-800 text-white"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-800"
+                  } text-left`}
+                >
+                  <div className="w-5 h-5 rounded-full border-2 border-emerald-500/50 shrink-0" />
+                  <span className="flex-1 font-semibold">{r.text}</span>
+                  <span className="text-[10px] font-black text-amber-500">
+                    +5💎
+                  </span>
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+
+      <form
+        onSubmit={handleAddTask}
+        className={`p-6 rounded-[36px] border ${colorMap.card} flex flex-col gap-4 shadow-sm`}
+      >
+        <input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder="What needs doing?"
+          className={`w-full px-4 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 ${colorMap.input}`}
+        />
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={inputDate}
+            onChange={(e) => setInputDate(e.target.value)}
+            className={`flex-1 px-3 py-2 rounded-xl text-xs outline-none ${colorMap.input}`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowDurationPicker(!showDurationPicker)}
+            className={`flex-1 text-left px-3 py-2 rounded-xl text-[10px] font-bold border border-dashed ${
+              isDark ? "border-zinc-700" : "border-slate-300"
+            } ${colorMap.btnEst}`}
+          >
+            {inputDuration > 0 ? `⏱️ ${inputDuration}m` : "⏱️ Estimate?"}
+          </button>
+        </div>
+        <div
+          className={`flex justify-around items-center py-2.5 rounded-2xl ${
+            isDark ? "bg-black/20" : "bg-slate-50"
+          }`}
+        >
+          {(["low", "med", "high", "urgent"] as Priority[]).map((p) => (
+            <button
+              key={`pri-${p}`}
+              type="button"
+              onClick={() => setInputPriority(p)}
+              className={`w-8 h-8 rounded-full border-2 transition-all ${
+                inputPriority === p
+                  ? "scale-110 border-white ring-4 ring-white/10"
+                  : "border-transparent opacity-30"
+              } ${
+                p === "low"
+                  ? "bg-blue-400"
+                  : p === "med"
+                  ? "bg-emerald-500"
+                  : p === "high"
+                  ? "bg-amber-500"
+                  : "bg-rose-500 animate-pulse"
+              }`}
+            />
+          ))}
+        </div>
+        {showDurationPicker && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            className="flex gap-2 pt-1"
+          >
+            {[5, 15, 30, 60].map((m) => (
+              <button
+                key={`dur-${m}`}
+                type="button"
+                onClick={() => setInputDuration(m)}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
+                  inputDuration === m
+                    ? "bg-emerald-500 text-white shadow-md"
+                    : colorMap.btnEst
+                }`}
+              >
+                {m}m
+              </button>
+            ))}
+          </motion.div>
+        )}
+        <button
+          type="submit"
+          className="bg-emerald-600 py-4 rounded-2xl font-black text-white hover:bg-emerald-500 active:scale-[0.98] transition-all"
+        >
+          Add Task
+        </button>
+      </form>
+
+      <div className="flex justify-between items-center mb-4 px-2 mt-8">
+        <h2 className={`text-xl font-bold ${colorMap.textMain}`}>Your Day</h2>
+        {tasks.filter((t) => t.date === new Date().toISOString().split("T")[0])
+          .length > 1 && (
+          <button
+            onClick={() => {
+              const today = tasks.filter(
+                (t) => t.date === new Date().toISOString().split("T")[0]
+              );
+              setRandomTaskId(
+                today[Math.floor(Math.random() * today.length)].id
+              );
+            }}
+            className="text-[10px] font-black uppercase px-3 py-1 bg-amber-500/10 text-amber-500 rounded-full border border-amber-500/20"
+          >
+            🎲 Choice Helper
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        {tasks
+          .filter((t) => t.date === new Date().toISOString().split("T")[0])
+          .map((t, index) => (
+            <motion.div
+              layout
+              key={`task-${t.id}-${index}`}
+              className={`relative overflow-hidden rounded-4xl border-2 transition-all ${
+                colorMap.card
+              } ${getTaskStyles(t.priority)}`}
+            >
+              {holdingTaskId === t.id && (
+                <motion.div
+                  className="absolute top-0 left-0 h-1.5 bg-emerald-500"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${holdProgress}%` }}
+                />
+              )}
+              <div
+                onMouseDown={() => startHolding(t.id)}
+                onMouseUp={stopHolding}
+                onTouchStart={() => startHolding(t.id)}
+                onTouchEnd={stopHolding}
+                className="w-full flex justify-between items-center p-6 text-left relative group select-none cursor-pointer"
+              >
+                <div className="flex flex-col gap-1">
+                  <span
+                    className={`font-bold flex items-center gap-3 ${
+                      t.priority === "urgent"
+                        ? "text-lg text-rose-400"
+                        : "text-sm"
+                    }`}
+                  >
+                    <div
+                      className={`w-3.5 h-3.5 rounded-full border-2 shex-shrink-0 ${
+                        holdingTaskId === t.id
+                          ? "border-emerald-500"
+                          : t.priority === "urgent"
+                          ? "bg-rose-500 border-rose-500"
+                          : t.priority === "high"
+                          ? "border-amber-500"
+                          : colorMap.taskBullet
+                      }`}
+                    />{" "}
+                    {t.text}
+                  </span>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <span className="text-amber-500 font-black text-xs pr-2">
+                    +{t.duration || 5}💎
+                  </span>
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startFocusTimer(t, 5);
+                    }}
+                    className={`p-2 rounded-xl text-[10px] font-black uppercase transition-colors ${
+                      isDark
+                        ? "bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white"
+                        : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
+                    }`}
+                  >
+                    5m <TimerReset size={12} className="inline ml-1 mb-0.5" />
+                  </button>
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startFocusTimer(t);
+                    }}
+                    className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-colors"
+                  >
+                    <Play size={14} fill="currentColor" />
+                  </button>
+                </div>
+              </div>
+              <div
+                className={`p-5 pt-0 border-t ${
+                  isDark ? "border-zinc-800" : "border-slate-50"
+                }`}
+              >
+                <input
+                  type="text"
+                  placeholder="+ Break it down?"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setTasks(
+                        tasks.map((x) =>
+                          x.id === t.id
+                            ? {
+                                ...x,
+                                subTasks: [
+                                  ...x.subTasks,
+                                  {
+                                    text: e.currentTarget.value,
+                                    completed: false,
+                                    id: Date.now().toString(),
+                                  },
+                                ],
+                              }
+                            : x
+                        )
+                      );
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                  className={`w-full text-xs p-2 mt-4 rounded-xl bg-transparent border border-dashed ${
+                    isDark
+                      ? "border-zinc-700 text-zinc-400"
+                      : "border-slate-200 text-slate-500"
+                  } focus:opacity-100 outline-none`}
+                />
+                <div className="space-y-2 mt-4">
+                  {t.subTasks.map((s, i) => (
+                    <button
+                      key={`sub-${s.id}-${i}`}
+                      onClick={() =>
+                        setTasks(
+                          tasks.map((x) =>
+                            x.id === t.id
+                              ? {
+                                  ...x,
+                                  subTasks: x.subTasks.map((y) =>
+                                    y.id === s.id
+                                      ? { ...y, completed: !y.completed }
+                                      : y
+                                  ),
+                                }
+                              : x
+                          )
+                        )
+                      }
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl text-xs transition-all ${
+                        s.completed
+                          ? "opacity-30 line-through"
+                          : "bg-black/5 dark:bg-black/20"
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded border ${
+                          s.completed
+                            ? "bg-emerald-500 border-emerald-500 text-white flex items-center justify-center text-[10px]"
+                            : "border-zinc-500 dark:border-zinc-700"
+                        }`}
+                      >
+                        {s.completed && "✓"}
+                      </div>
+                      {s.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+      </div>
+    </div>
+  );
+}
