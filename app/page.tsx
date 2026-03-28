@@ -1,15 +1,8 @@
 "use client";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import confetti from "canvas-confetti";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import {
-  Target, Calendar as CalIcon, Leaf, Gem,
-  Settings, Brain, CheckCircle2,
-  Zap, History, Play, X,
-  Timer,
-  Gift, TimerReset, Plus, ArrowLeft, ArrowRight,
-  Trash2, CheckSquare
-} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Brain, Leaf, Play, Zap, Droplet, RefreshCw } from "lucide-react";
 
 import SettingsModal from "./components/Modals/SettingsModal";
 import WinLogModal from "./components/Modals/WinLogModal";
@@ -18,13 +11,13 @@ import BrainDumpDrawer from "./components/Modals/BrainDumpDrawer";
 import FocusTimerModal from "./components/Modals/FocusTimerModal";
 import OverwhelmModal from "./components/Modals/OverwhelmModal";
 import BreathingModal from "./components/Modals/BreathingModal";
+import GroundingModal from "./components/Modals/GroundingModal";
 
 import StatusBar from "./components/Layout/StatusBar";
 import Header from "./components/Layout/Header";
 import Navigation from "./components/Layout/Navigation";
 
 import FocusTab from "./components/Tabs/FocusTab";
-import RechargeTab from "./components/Tabs/RechargeTab";
 import CalendarTab from "./components/Tabs/CalendarTab";
 import RewardsTab from "./components/Tabs/RewardsTab";
 
@@ -61,6 +54,8 @@ export default function Home() {
   const [ventTimer, setVentTimer] = useState(60);
   const [isBreathing, setIsBreathing] = useState(false);
   const [waterIntake, setWaterIntake] = useState(0);
+  const [bubbleState, setBubbleState] = useState(Array(12).fill(false));
+  const [groundingStep, setGroundingStep] = useState(0);
 
   // --- ECONOMY & GENTLE STREAKS ---
   const [points, setPoints] = useState(0);
@@ -79,6 +74,72 @@ export default function Home() {
       setPoints((p) => p + 1);
       setDailyPointsEarned((d) => d + 1);
     }
+  };
+
+  const playSound = useCallback(
+    (s: string) => {
+      if (soundEnabled) {
+        try {
+          new Audio(`/sounds/${s}.mp3`).play();
+        } catch (e) {}
+      }
+    },
+    [soundEnabled]
+  );
+
+  const handlePopBubble = (index: number) => {
+    if (bubbleState[index]) return;
+    const newBubbleState = [...bubbleState];
+    newBubbleState[index] = true;
+    setBubbleState(newBubbleState);
+    playSound("bubble_pop");
+  };
+
+  const resetBubbles = useCallback(() => {
+    setBubbleState(Array(12).fill(false));
+  }, []);
+
+  // Automatic reset for Bubble Pop
+  useEffect(() => {
+    if (bubbleState.length > 0 && bubbleState.every(Boolean)) {
+      const resetTimer = setTimeout(() => {
+        confetti({
+          particleCount: 250,
+          spread: 360,
+          origin: { y: 0.5 },
+          scalar: 1.2,
+        });
+        playSound("level_up");
+
+        if (dailyPointsEarned < DAILY_CAP) {
+          const awarded = Math.min(5, DAILY_CAP - dailyPointsEarned);
+          setPoints((p) => p + awarded);
+          setDailyPointsEarned((d) => d + awarded);
+        }
+
+        resetBubbles();
+      }, 300);
+
+      return () => clearTimeout(resetTimer);
+    }
+  }, [bubbleState, dailyPointsEarned, playSound, resetBubbles]);
+
+  const handleAdvanceGrounding = () => {
+    if (groundingStep < 5) {
+      setGroundingStep(groundingStep + 1);
+    } else {
+      confetti({ particleCount: 150, spread: 100 });
+      if (dailyPointsEarned < DAILY_CAP) {
+        const awarded = Math.min(5, DAILY_CAP - dailyPointsEarned);
+        setPoints((p) => p + awarded);
+        setDailyPointsEarned((d) => d + awarded);
+      }
+      setGroundingStep(0);
+    }
+  };
+
+  const closeGroundingModal = () => {
+    setGroundingStep(0);
   };
 
   // --- DATA LISTS ---
@@ -133,18 +194,11 @@ export default function Home() {
 
   // --- 2. CORE FUNCTIONS (DEFINED BEFORE USE) ---
   // MARK: Task & Ritual Funcs
-  const abortOnFocus = () => {
-    setFocusTask(null); setFocusRemainingSeconds(0);
-  }
-
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m}:${s < 10 ? "0" : ""}${s}`;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
-
-  const playSound = (s: string) => { if (soundEnabled) { try { new Audio(`/sounds/${s}.mp3`).play(); } catch(e){} } };
-
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -357,7 +411,8 @@ export default function Home() {
     input:
       "bg-white text-slate-900 border-slate-300 dark:bg-zinc-800 dark:text-white dark:border-zinc-700",
     textMain: "text-slate-900 dark:text-zinc-100",
-    tabActive: "bg-white text-emerald-600 shadow-md dark:bg-zinc-800 dark:text-emerald-400 dark:border-emerald-500/20",
+    tabActive:
+      "bg-white text-emerald-600 shadow-md dark:bg-zinc-800 dark:text-emerald-400 dark:border-emerald-500/20",
     stencilColor: "text-stone-50 dark:text-zinc-950",
     btnEst: isDark
       ? "bg-zinc-800 text-zinc-400"
@@ -444,7 +499,7 @@ export default function Home() {
     setVentTimer(60);
     setInputDump("");
     ventIntervalRef.current = setInterval(() => {
-      setVentTimer((prev) => {
+      setVentTimer((prev: number) => {
         if (prev <= 1) {
           clearInterval(ventIntervalRef.current!);
           setIsVentMode(false);
@@ -469,71 +524,26 @@ export default function Home() {
     if (ventIntervalRef.current) clearInterval(ventIntervalRef.current);
   };
 
-  // probabilities must add to 1
-  const mysteryBoxPrizes= [
-    {
-      title: "Free Pass on 1 Chore",
-      probability: 0.50,
-    },
-    {
-      title: "Take a 20 min Nap",
-      probability: 0.30,
-    },
-    {
-      title: "Buy a small treat",
-      probability: 0.20,
-    },
-  ];
-
   const openMysteryBox = () => {
-  if (points < 30) return;
-  setPoints(p => p - 30);
-  playSound('redeem');
-  confetti({ particleCount: 150, spread: 100, colors: ['#a855f7', '#fcd34d', '#3b82f6'] });
-
-  // combine rewards and mystery prizes into one pool
-  const prizePool = [
-    ...rewards.map(r => ({ title: r.title, probability: 0.5 / rewards.length })),
-    ...mysteryBoxPrizes,
-  ];
-
-  let roll = Math.random();
-  let won = prizePool[prizePool.length - 1].title; // fallback to last if something goes wrong
-
-  for (const prize of prizePool) {
-    roll -= prize.probability;
-    if (roll <= 0) {
-      won = prize.title;
-      break;
-    }
-  }
-
-  setMysteryPrize(won);
-};
-
-
-  const renderMonthView = () => {
-    const year = viewDate.getFullYear(), month = viewDate.getMonth(), days = [], daysInMonth = new Date(year, month + 1, 0).getDate(), firstDay = new Date(year, month, 1).getDay();
-    for (let i = 0; i < firstDay; i++) days.push(<div key={`empty-${i}`} className="h-12" />);
-    for (let d = 1; d <= daysInMonth; d++) {
-      const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, dt = tasks.filter(x => x.date === ds), isToday = new Date().toISOString().split('T')[0] === ds;
-      days.push(<button key={`day-${d}`} onClick={() => { setViewDate(new Date(ds)); setCalendarView("day"); }} className={`h-12 border ${isDark ? 'border-zinc-800' : 'border-slate-100'} flex flex-col items-center p-1 rounded-lg transition-colors hover:bg-emerald-500/10`}><span className={`text-[9px] font-bold ${isToday ? 'bg-emerald-500 text-white rounded-full w-4 h-4 flex items-center justify-center' : colorMap.textMuted}`}>{d}</span><div className="flex gap-0.5 mt-1">{dt.slice(0, 3).map((_, i) => <div key={`dot-${d}-${i}`} className="w-1 h-1 rounded-full bg-emerald-400" />)}</div></button>);
-    }
-    return <div className={`grid grid-cols-7 gap-1`}>{['S','M','T','W','T','F','S'].map((d,i)=><div key={`head-${d}-${i}`} className={`text-center py-2 text-[9px] font-black opacity-30`}>{d}</div>)}{days}</div>;
-  };
-
-  const renderWeekView = () => {
-    const sow = new Date(viewDate); sow.setDate(viewDate.getDate() - viewDate.getDay()); const days = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(sow); d.setDate(sow.getDate() + i); const ds = d.toISOString().split('T')[0], dt = tasks.filter(x => x.date === ds), isT = new Date().toISOString().split('T')[0] === ds;
-      days.push(<button key={`week-${i}`} onClick={() => { setViewDate(d); setCalendarView("day"); }} className={`p-4 rounded-2xl border flex flex-col items-center gap-1 transition-all ${isT ? 'bg-emerald-500/10 border-emerald-500' : colorMap.card}`}><span className="text-[10px] font-black opacity-40 uppercase">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i]}</span><span className={`text-xl font-bold ${isT ? 'text-emerald-500' : colorMap.textMain}`}>{d.getDate()}</span><span className="text-[10px] font-bold text-amber-500">{dt.length} tasks</span></button>);
-    }
-    return <div className="grid grid-cols-1 gap-2 animate-in slide-in-from-right-4">{days}</div>;
-  };
-
-  const renderDayView = () => {
-    const ds = viewDate.toISOString().split('T')[0], dt = tasks.filter(x => x.date === ds);
-    return (<div className="animate-in zoom-in-95 duration-300"><div className={`p-8 rounded-[40px] text-center mb-6 ${colorMap.card}`}><p className="text-xs font-black uppercase opacity-40 mb-1">{viewDate.toLocaleDateString('default', { weekday: 'long' })}</p><h3 className="text-4xl font-black">{viewDate.getDate()}</h3><p className="text-sm opacity-60">{viewDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}</p></div><div className="space-y-3">{dt.length === 0 ? <p className="text-center py-10 opacity-40 italic">No tasks today.</p> : dt.map(t => (<div key={t.id} className={`p-5 rounded-2xl flex justify-between items-center ${colorMap.card}`}><span className="font-bold text-sm">{t.text}</span><span className="text-[10px] opacity-40 font-bold">{t.duration || 5}m</span></div>))}</div></div>);
+    if (points < 30) return;
+    setPoints((p) => p - 30);
+    playSound("redeem");
+    confetti({
+      particleCount: 150,
+      spread: 100,
+      colors: ["#a855f7", "#fcd34d", "#3b82f6"],
+    });
+    const fallbackPrizes = [
+      "Free Pass on 1 Chore",
+      "Take a 20 min Nap",
+      "Buy a small treat",
+      "Order Takeout tonight",
+    ];
+    const won = [
+      ...rewards.map((r) => r.title),
+      ...fallbackPrizes,
+    ][Math.floor(Math.random() * (rewards.length + 4))];
+    setMysteryPrize(won);
   };
 
   const startHolding = (id: string) => {
@@ -600,6 +610,14 @@ export default function Home() {
             triggerVentMode={triggerVentMode}
           />
         )}
+        {isBreathing && <BreathingModal onClose={() => setIsBreathing(false)} />}
+        {groundingStep > 0 && (
+          <GroundingModal
+            step={groundingStep}
+            onAdvance={handleAdvanceGrounding}
+            onClose={closeGroundingModal}
+          />
+        )}
       </AnimatePresence>
       <div className="w-full max-w-md px-6 pb-24 relative z-10">
         <StatusBar
@@ -661,13 +679,90 @@ export default function Home() {
             )}
 
             {activeTab === "recharge" && (
-              <RechargeTab
-                colorMap={colorMap}
-                isDark={isDark}
-                setIsBreathing={setIsBreathing}
-                waterIntake={waterIntake}
-                handleDrinkWater={handleDrinkWater}
-              />
+              <div className="space-y-4 pt-4">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsBreathing(true)}
+                  className={`w-full flex items-center gap-6 p-7 rounded-[40px] active:scale-95 transition-all ${colorMap.card} shadow-sm`}
+                >
+                  <span
+                    className={`text-3xl p-3 ${colorMap.rechargeIconBg} rounded-2xl`}
+                  >
+                    <Zap className="text-yellow-400" />
+                  </span>
+                  <span
+                    className={`font-bold text-xl ${
+                      isDark ? "text-white" : "text-slate-800"
+                    }`}
+                  >
+                    4-7-8 Breathing
+                  </span>
+                </motion.button>
+
+                <div className={`p-7 rounded-[40px] ${colorMap.card} shadow-sm`}>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-800'}`}>Water Intake</h3>
+                    <span className="font-black text-amber-500">{waterIntake} / 8</span>
+                  </div>
+                  <div className="grid grid-cols-8 gap-2 mb-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div key={`water-dot-${i}`} className={`h-2 rounded-full ${i < waterIntake ? 'bg-blue-400' : isDark ? 'bg-zinc-800' : 'bg-slate-200'}`} />
+                    ))}
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleDrinkWater}
+                    className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-blue-500/10 text-blue-500 font-bold"
+                  >
+                    <Droplet size={16} />
+                    <span>Drink Water</span>
+                  </motion.button>
+                </div>
+
+                <div className={`p-7 rounded-[40px] ${colorMap.card} shadow-sm`}>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-800'}`}>Bubble Pop</h3>
+                    <button onClick={resetBubbles}><RefreshCw size={14} className={colorMap.textMuted}/></button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4">
+                    {bubbleState.map((isPopped, i) => (
+                      <motion.button
+                        key={`bubble-${i}`}
+                        onClick={() => handlePopBubble(i)}
+                        animate={isPopped ? { scale: [1, 0.9, 1] } : {}}
+                        transition={{ duration: 0.2 }}
+                        className={`w-12 h-12 rounded-full transition-all duration-200 focus:outline-none ${
+                          isPopped
+                            ? 'bg-purple-300 shadow-[inset_0_4px_8px_rgba(0,0,0,0.1)]'
+                            : 'bg-purple-200 shadow-[0_4px_8px_rgba(0,0,0,0.15),inset_0_-4px_8px_rgba(0,0,0,0.1)]'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setGroundingStep(1)}
+                  className={`w-full flex items-center gap-6 p-7 rounded-[40px] active:scale-95 transition-all ${colorMap.card} shadow-sm`}
+                >
+                  <span
+                    className={`text-3xl p-3 ${colorMap.rechargeIconBg} rounded-2xl`}
+                  >
+                    <Leaf className="text-emerald-400" />
+                  </span>
+                  <span
+                    className={`font-bold text-xl ${
+                      isDark ? "text-white" : "text-slate-800"
+                    }`}
+                  >
+                    5-4-3-2-1 Grounding
+                  </span>
+                </motion.button>
+              </div>
             )}
 
             {activeTab === "calendar" && (
@@ -703,14 +798,21 @@ export default function Home() {
       </div>
 
       {/* --- FLOATING BRAIN DUMP BUTTON --- */}
-      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setIsDumpOpen(true)} className={`fixed bottom-8 right-8 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center text-3xl z-40 bg-amber-400 text-zinc-900`}><Brain /></motion.button>
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setIsDumpOpen(true)}
+        className={`fixed bottom-8 right-8 w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center text-3xl z-40 bg-amber-400 text-zinc-900`}
+      >
+        <Brain />
+      </motion.button>
 
       <BrainDumpDrawer
         isDumpOpen={isDumpOpen}
         closeDumpMenu={closeDumpMenu}
         colorMap={colorMap}
-        isDark={isDark}
         overwhelmMode={overwhelmMode}
+        isDark={isDark}
         isVentMode={isVentMode}
         triggerVentMode={triggerVentMode}
         handleAddDump={handleAddDump}
@@ -722,13 +824,8 @@ export default function Home() {
         ventTimer={ventTimer}
       />
 
-        {/* Modals */}
-      <AnimatePresence>
-        {isBreathing && <BreathingModal onClose={() => setIsBreathing(false)} />}
-      </AnimatePresence>
-
       <FocusTimerModal
-        focusTask={focusTask || null}
+        focusTask={focusTask}
         setFocusTask={setFocusTask}
         ambientTrack={ambientTrack}
         setAmbientTrack={setAmbientTrack}

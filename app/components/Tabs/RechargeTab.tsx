@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Zap, Leaf, Droplet } from "lucide-react";
+import { Zap, Leaf, Droplet, RefreshCw } from "lucide-react";
 
 interface RechargeTabProps {
   colorMap: any;
@@ -7,6 +7,10 @@ interface RechargeTabProps {
   setIsBreathing: (isBreathing: boolean) => void;
   waterIntake: number;
   handleDrinkWater: () => void;
+  bubbleState: boolean[];
+  handlePopBubble: (index: number) => void;
+  resetBubbles: () => void;
+  setGroundingStep: (step: number) => void;
 }
 
 export default function RechargeTab({
@@ -15,20 +19,11 @@ export default function RechargeTab({
   setIsBreathing,
   waterIntake,
   handleDrinkWater,
+  bubbleState,
+  handlePopBubble,
+  resetBubbles,
+  setGroundingStep,
 }: RechargeTabProps) {
-  const staticItems = [
-    {
-      title: "Step outside for air",
-      icon: <Leaf className="text-emerald-400" />,
-      action: () => {},
-    },
-    {
-      title: "Quick 1-minute stretch",
-      icon: <Zap className="text-purple-400" />,
-      action: () => {},
-    },
-  ];
-
   return (
     <div className="space-y-4 pt-4">
       <motion.button
@@ -72,28 +67,47 @@ export default function RechargeTab({
         </motion.button>
       </div>
 
-      {staticItems.map((item, i) => (
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          key={`recharge-${i}`}
-          onClick={item.action}
-          className={`w-full flex items-center gap-6 p-7 rounded-[40px] active:scale-95 transition-all ${colorMap.card} shadow-sm`}
+      <div className={`p-7 rounded-[40px] ${colorMap.card} shadow-sm`}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-800'}`}>Bubble Pop</h3>
+          <button onClick={resetBubbles}><RefreshCw size={14} className={colorMap.textMuted}/></button>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {bubbleState.map((isPopped, i) => (
+            <motion.button
+              key={`bubble-${i}`}
+              onClick={() => handlePopBubble(i)}
+              animate={isPopped ? { scale: [1, 0.9, 1], opacity: 1 } : { scale: 1, opacity: 1 }}
+              transition={isPopped ? { duration: 0.2 } : {}}
+              className={`w-12 h-12 rounded-full transition-all ${
+                isPopped
+                  ? 'bg-purple-300 shadow-[inset_0_4px_8px_rgba(0,0,0,0.1)]'
+                  : 'bg-purple-200 shadow-[0_4px_8px_rgba(0,0,0,0.15),inset_0_-4px_8px_rgba(0,0,0,0.1)]'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setGroundingStep(1)}
+        className={`w-full flex items-center gap-6 p-7 rounded-[40px] active:scale-95 transition-all ${colorMap.card} shadow-sm`}
+      >
+        <span
+          className={`text-3xl p-3 ${colorMap.rechargeIconBg} rounded-2xl`}
         >
-          <span
-            className={`text-3xl p-3 ${colorMap.rechargeIconBg} rounded-2xl`}
-          >
-            {item.icon}
-          </span>
-          <span
-            className={`font-bold text-xl ${
-              isDark ? "text-white" : "text-slate-800"
-            }`}
-          >
-            {item.title}
-          </span>
-        </motion.button>
-      ))}
+          <Leaf className="text-emerald-400" />
+        </span>
+        <span
+          className={`font-bold text-xl ${
+            isDark ? "text-white" : "text-slate-800"
+          }`}
+        >
+          5-4-3-2-1 Grounding
+        </span>
+      </motion.button>
     </div>
   );
 }
