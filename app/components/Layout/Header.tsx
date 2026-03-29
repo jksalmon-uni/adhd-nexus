@@ -1,6 +1,6 @@
 interface HeaderProps {
   greeting: string;
-  colorMap: any;
+  colorMap: Record<string, string>;
   setOverwhelmMode: (mode: boolean) => void;
 }
 
@@ -22,7 +22,7 @@ export default function Header({
         }}
         className={`text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-full transition-all bg-rose-500/10 text-rose-500 border border-rose-500/20 active:scale-95`}
       >
-        ⚠️ I'm Overwhelmed
+        ⚠️ I&apos;m Overwhelmed
       </button>
     </header>
   );

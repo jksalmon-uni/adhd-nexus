@@ -1,10 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Plus, Timer, Trash2, X } from "lucide-react";
+import { Plus, Timer, Trash2, X } from "lucide-react";
 
 interface BrainDumpDrawerProps {
     isDumpOpen: boolean;
     closeDumpMenu: () => void;
-    colorMap: any;
+    colorMap: Record<string, string>;
     isDark: boolean;
     isVentMode: boolean;
     triggerVentMode: () => void;

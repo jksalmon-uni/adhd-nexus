@@ -4,7 +4,7 @@ import { History, Settings } from "lucide-react";
 interface StatusBarProps {
   totalXp: number;
   points: number;
-  colorMap: any;
+  colorMap: Record<string, string>;
   setIsVaultOpen: (isOpen: boolean) => void;
   setIsSettingsOpen: (isOpen: boolean) => void;
 }

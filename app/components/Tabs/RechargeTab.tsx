@@ -1,59 +1,63 @@
+"use client";
 import { motion } from "framer-motion";
-import { Zap, Leaf, Droplet, RefreshCw } from "lucide-react";
+import { Zap, Droplet, RefreshCw, Leaf } from "lucide-react";
 
 interface RechargeTabProps {
-  colorMap: any;
   isDark: boolean;
-  setIsBreathing: (isBreathing: boolean) => void;
+  colorMap: Record<string, string>;
   waterIntake: number;
   handleDrinkWater: () => void;
   bubbleState: boolean[];
   handlePopBubble: (index: number) => void;
   resetBubbles: () => void;
-  setGroundingStep: (step: number) => void;
+  setIsBreathing: (val: boolean) => void;
+  setGroundingStep: (val: number) => void;
 }
 
 export default function RechargeTab({
-  colorMap,
   isDark,
-  setIsBreathing,
+  colorMap,
   waterIntake,
   handleDrinkWater,
   bubbleState,
   handlePopBubble,
   resetBubbles,
+  setIsBreathing,
   setGroundingStep,
 }: RechargeTabProps) {
   return (
     <div className="space-y-4 pt-4">
+      {/* Breathing */}
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => setIsBreathing(true)}
         className={`w-full flex items-center gap-6 p-7 rounded-[40px] active:scale-95 transition-all ${colorMap.card} shadow-sm`}
       >
-        <span
-          className={`text-3xl p-3 ${colorMap.rechargeIconBg} rounded-2xl`}
-        >
+        <span className={`text-3xl p-3 ${colorMap.rechargeIconBg} rounded-2xl`}>
           <Zap className="text-yellow-400" />
         </span>
-        <span
-          className={`font-bold text-xl ${
-            isDark ? "text-white" : "text-slate-800"
-          }`}
-        >
+        <span className={`font-bold text-xl ${isDark ? "text-white" : "text-slate-800"}`}>
           4-7-8 Breathing
         </span>
       </motion.button>
 
+      {/* Water Tracker */}
       <div className={`p-7 rounded-[40px] ${colorMap.card} shadow-sm`}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-800'}`}>Water Intake</h3>
+          <h3 className={`font-bold text-xl ${isDark ? "text-white" : "text-slate-800"}`}>
+            Water Intake
+          </h3>
           <span className="font-black text-amber-500">{waterIntake} / 8</span>
         </div>
         <div className="grid grid-cols-8 gap-2 mb-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={`water-dot-${i}`} className={`h-2 rounded-full ${i < waterIntake ? 'bg-blue-400' : isDark ? 'bg-zinc-800' : 'bg-slate-200'}`} />
+            <div
+              key={`water-dot-${i}`}
+              className={`h-2 rounded-full ${
+                i < waterIntake ? "bg-blue-400" : isDark ? "bg-zinc-800" : "bg-slate-200"
+              }`}
+            />
           ))}
         </div>
         <motion.button
@@ -67,44 +71,40 @@ export default function RechargeTab({
         </motion.button>
       </div>
 
+      {/* Bubble Pop */}
       <div className={`p-7 rounded-[40px] ${colorMap.card} shadow-sm`}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-800'}`}>Bubble Pop</h3>
-          <button onClick={resetBubbles}><RefreshCw size={14} className={colorMap.textMuted}/></button>
+          <h3 className={`font-bold text-xl ${isDark ? "text-white" : "text-slate-800"}`}>
+            Bubble Pop
+          </h3>
+          <button onClick={resetBubbles}><RefreshCw size={14} className={colorMap.textMuted} /></button>
         </div>
         <div className="grid grid-cols-4 gap-4">
           {bubbleState.map((isPopped, i) => (
             <motion.button
               key={`bubble-${i}`}
               onClick={() => handlePopBubble(i)}
-              animate={isPopped ? { scale: [1, 0.9, 1], opacity: 1 } : { scale: 1, opacity: 1 }}
-              transition={isPopped ? { duration: 0.2 } : {}}
-              className={`w-12 h-12 rounded-full transition-all ${
-                isPopped
-                  ? 'bg-purple-300 shadow-[inset_0_4px_8px_rgba(0,0,0,0.1)]'
-                  : 'bg-purple-200 shadow-[0_4px_8px_rgba(0,0,0,0.15),inset_0_-4px_8px_rgba(0,0,0,0.1)]'
+              animate={isPopped ? { scale: [1, 0.9, 1] } : {}}
+              transition={{ duration: 0.2 }}
+              className={`w-12 h-12 rounded-full transition-all duration-200 focus:outline-none ${
+                isPopped ? "bg-purple-300 shadow-[inset_0_4px_8px_rgba(0,0,0,0.1)]" : "bg-purple-200 shadow-[0_4px_8px_rgba(0,0,0,0.15),inset_0_-4px_8px_rgba(0,0,0,0.1)]"
               }`}
             />
           ))}
         </div>
       </div>
 
+      {/* Grounding */}
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => setGroundingStep(1)}
         className={`w-full flex items-center gap-6 p-7 rounded-[40px] active:scale-95 transition-all ${colorMap.card} shadow-sm`}
       >
-        <span
-          className={`text-3xl p-3 ${colorMap.rechargeIconBg} rounded-2xl`}
-        >
+        <span className={`text-3xl p-3 ${colorMap.rechargeIconBg} rounded-2xl`}>
           <Leaf className="text-emerald-400" />
         </span>
-        <span
-          className={`font-bold text-xl ${
-            isDark ? "text-white" : "text-slate-800"
-          }`}
-        >
+        <span className={`font-bold text-xl ${isDark ? "text-white" : "text-slate-800"}`}>
           5-4-3-2-1 Grounding
         </span>
       </motion.button>

@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
-import { Leaf, Play, TimerReset } from "lucide-react";
+import { Leaf, Play } from "lucide-react";
 import type { Task, Priority, Ritual } from "../../types";
 
 interface FocusTabProps {
   rituals: Ritual[];
   completeRitual: (id: string) => void;
-  colorMap: any;
+  colorMap: Record<string, string>;
   isDark: boolean;
-  handleAddTask: (e: React.FormEvent) => void;
+  handleAddTask: () => void;
   inputValue: string;
   setInputValue: (value: string) => void;
   inputDate: string;
@@ -87,7 +87,10 @@ export default function FocusTab({
       )}
 
       <form
-        onSubmit={handleAddTask}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleAddTask();
+        }}
         className={`p-6 rounded-[36px] border ${colorMap.card} flex flex-col gap-4 shadow-sm`}
       >
         <input

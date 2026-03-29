@@ -62,7 +62,7 @@ export default function OverwhelmModal({
           onClick={() => setOverwhelmMode(false)}
           className="text-slate-400 text-sm"
         >
-          I'm ready to go back
+          I&apos;m ready to go back
         </button>
       </div>
     </motion.div>

@@ -5,7 +5,7 @@ interface NavigationProps {
   activeTab: "focus" | "calendar" | "recharge" | "rewards";
   setActiveTab: (tab: "focus" | "calendar" | "recharge" | "rewards") => void;
   isDark: boolean;
-  colorMap: any;
+  colorMap: Record<string, string>;
 }
 
 export default function Navigation({

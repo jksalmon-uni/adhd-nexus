@@ -3,7 +3,7 @@ import type { Task } from "../../types";
 
 interface CalendarTabProps {
   isDark: boolean;
-  colorMap: any;
+  colorMap: Record<string, string>;
   calendarView: "month" | "week" | "day";
   setCalendarView: (view: "month" | "week" | "day") => void;
   viewDate: Date;
