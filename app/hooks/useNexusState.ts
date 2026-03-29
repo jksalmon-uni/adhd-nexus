@@ -7,6 +7,7 @@ import {
   Reward,
   Ritual,
   Theme,
+  ClaimedReward,
 } from "../types";
 
 const useSystemTheme = () => {
@@ -159,6 +160,7 @@ export function useNexusState() {
       lastCompletedDate: "",
     },
   ]);
+  const [claimedRewards, setClaimedRewards] = useState<ClaimedReward[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([
     { title: "Watch 1 YouTube video", duration: 15, cost: 15, id: "r1" },
     { title: "Gaming Session", duration: 30, cost: 30, id: "r2" },
@@ -391,6 +393,7 @@ export function useNexusState() {
     load("garden", (v) => setGardenPlants(v as string[]));
     load("last-plant", (v) => setLastPlantedDate(v as string), (v) => v);
     load("water", (v) => setWaterIntake(v as number), (v) => parseInt(v, 10) || 0);
+    load("claimed-rewards", (v) => setClaimedRewards(v as ClaimedReward[]));
     const savedRituals = localStorage.getItem(SAVE_KEY + "rituals");
     if (savedRituals) {
       const parsedRituals: Ritual[] = JSON.parse(savedRituals);
@@ -434,6 +437,7 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
       save("garden", gardenPlants);
       save("last-plant", lastPlantedDate);
       save("water", waterIntake.toString());
+      save("claimed-rewards", claimedRewards);
     }
   }, [
     tasks,
@@ -452,6 +456,7 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
     completedTasks,
     SAVE_KEY,
     waterIntake,
+    claimedRewards,
   ]);
 
   // --- 4. THEME & MATH ---
@@ -602,6 +607,34 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
       ...fallbackPrizes,
     ][Math.floor(Math.random() * (rewards.length + 4))];
     setMysteryPrize(won);
+  };
+
+  const claimReward = (r: Reward) => {
+    if (points < r.cost) return;
+    setPoints((p) => p - r.cost);
+    const newClaimedReward: ClaimedReward = {
+      instanceId: `${Date.now()}`,
+      title: r.title,
+      duration: r.duration,
+      claimedAt: new Date().toISOString(),
+      used: false,
+    };
+    setClaimedRewards((prev) => [newClaimedReward, ...prev]);
+    playSound("redeem");
+    confetti({
+      particleCount: 150,
+      spread: 100,
+      colors: ["#a855f7", "#fcd34d", "#3b82f6"],
+    });
+  };
+
+  const useClaimedReward = (instanceId: string) => {
+    setClaimedRewards((prev) =>
+      prev.map((cr) =>
+        cr.instanceId === instanceId ? { ...cr, used: true } : cr
+      )
+    );
+    playSound("complete_task");
   };
 
   const startHolding = (id: string) => {
@@ -766,7 +799,10 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
     triggerVentMode,
     closeDumpMenu,
     openMysteryBox,
+    claimReward,
+    useClaimedReward,
     startHolding,
     stopHolding,
+    claimedRewards,
   };
 }

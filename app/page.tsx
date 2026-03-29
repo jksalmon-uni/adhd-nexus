@@ -8,6 +8,7 @@ import {
   X,
   History,
   Settings,
+  Ticket,
 } from "lucide-react";
 
 import WinLogModal from "./components/Modals/WinLogModal";
@@ -182,145 +183,209 @@ export default function Home() {
             )}
 
             {state.activeTab === "rewards" && (
-              <div className="space-y-4 pt-4">
-                <button
-                  onClick={state.openMysteryBox}
-                  className={`w-full flex justify-between items-center p-8 rounded-[36px] transition-all border border-purple-500/50 bg-purple-500/10 shadow-lg ${
-                    state.points >= 30
-                      ? "active:scale-95 hover:bg-purple-500/20"
-                      : "opacity-40 pointer-events-none"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="text-3xl p-3 bg-purple-500 text-white rounded-2xl">
-                      <Gift size={24} />
-                    </span>
-                    <div className="flex flex-col items-start">
-                      <span className="font-black text-lg text-purple-500">
-                        Mystery Box
-                      </span>
-                      <span className="text-xs font-bold opacity-60">
-                        A fun gamble!
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-amber-500 font-black">30 💎</span>
-                </button>
+              <div className="space-y-8 pt-4 pb-20">
+                {/* My Inventory */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Ticket /> My Inventory
+                  </h2>
+                  {state.claimedRewards && state.claimedRewards.filter((r) => !r.used).length > 0 ? (
+                    state.claimedRewards
+                      .filter((r) => !r.used)
+                      .map((cr) => (
+                        <div
+                          key={cr.instanceId}
+                          className={`relative group p-6 rounded-2xl flex justify-between items-center ${state.colorMap.card} border-l-4 border-emerald-500`}
+                        >
+                          <div className="text-left">
+                            <div
+                              className={`font-bold text-lg ${
+                                state.isDark ? "text-white" : "text-slate-800"
+                              }`}
+                            >
+                              {cr.title}
+                            </div>
+                            <div className={`text-xs ${state.colorMap.textMuted}`}>
+                              Claimed:{" "}
+                              {new Date(cr.claimedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => state.useClaimedReward(cr.instanceId)}
+                            className="bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg active:scale-95"
+                          >
+                            Use Now
+                          </button>
+                        </div>
+                      ))
+                  ) : (
+                    <p className={`${state.colorMap.textMuted} text-center py-4`}>
+                      Your inventory is empty. Buy rewards from the shop below!
+                    </p>
+                  )}
 
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!state.newRewardTitle || !state.newRewardDuration) return;
-                    state.setRewards([
-                      {
-                        title: state.newRewardTitle,
-                        duration: state.newRewardDuration,
-                        cost: state.newRewardDuration,
-                        id: Date.now().toString(),
-                      },
-                      ...state.rewards,
-                    ]);
-                    state.setNewRewardTitle("");
-                    state.setNewRewardDuration(15);
-                  }}
-                  className={`p-4 rounded-4xl mt-8 mb-6 flex flex-col gap-3 ${state.colorMap.card}`}
-                >
-                  <h3
-                    className={`text-center font-bold ${
-                      state.isDark ? "text-white" : "text-slate-800"
+                  {state.claimedRewards && state.claimedRewards.filter((r) => r.used).length > 0 && (
+                    <div className="space-y-2 pt-4">
+                      <h3 className="font-bold flex items-center gap-2 text-sm opacity-50">
+                        <History size={16} /> Used History
+                      </h3>
+                      {state.claimedRewards
+                        .filter((r) => r.used)
+                        .slice(0, 5)
+                        .map((cr) => (
+                          <div
+                            key={cr.instanceId}
+                            className="p-3 rounded-lg flex justify-between items-center opacity-40"
+                          >
+                            <span className="font-medium text-sm">
+                              {cr.title}
+                            </span>
+                            <span className="text-xs">
+                              {new Date(cr.claimedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Reward Shop */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold">Reward Shop</h2>
+                  <button
+                    onClick={state.openMysteryBox}
+                    className={`w-full flex justify-between items-center p-8 rounded-[36px] transition-all border ${state.colorMap.card} ${
+                      state.points >= 30
+                        ? "active:scale-95"
+                        : "opacity-40 pointer-events-none"
                     }`}
                   >
-                    Add Custom Reward
-                  </h3>
-                  <input
-                    value={state.newRewardTitle}
-                    onChange={(e) => state.setNewRewardTitle(e.target.value)}
-                    placeholder="Reward Name (e.g. 'Play a game')"
-                    className={`w-full px-4 py-3 rounded-2xl text-sm ${state.colorMap.input}`}
-                  />
-                  <label
-                    className={`text-center text-xs font-bold mb-1 ${state.colorMap.textMuted}`}
-                  >
-                    How much time is this reward worth?
-                  </label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {[
-                      { label: "5m", value: 5 },
-                      { label: "15m", value: 15 },
-                      { label: "30m", value: 30 },
-                      { label: "1h", value: 60 },
-                      { label: "2h", value: 120 },
-                    ].map((d) => (
-                      <button
-                        type="button"
-                        key={d.value}
-                        onClick={() => state.setNewRewardDuration(d.value)}
-                        className={`px-2 py-2 text-xs font-bold rounded-lg transition-colors ${
-                          state.newRewardDuration === d.value
-                            ? "bg-purple-600 text-white"
-                            : state.isDark
-                            ? "bg-zinc-800"
-                            : "bg-slate-100"
-                        }`}
-                      >
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="submit"
-                    className="bg-purple-600 w-full h-12 flex items-center justify-center rounded-2xl font-bold text-white mt-2"
-                  >
-                    <Plus size={20} className="mr-2" />
-                    Add Reward
-                  </button>
-                </form>
-
-                {state.rewards.map((r, i) => (
-                  <div key={`reward-${r.id}-${i}`} className="relative group">
-                    <button
-                      onClick={() => {
-                        if (state.points >= r.cost) {
-                          state.setPoints((p: number) => p - r.cost);
-                          state.playSound("redeem");
-                          confetti();
-                        }
-                      }}
-                      className={`w-full flex justify-between items-center p-6 rounded-[32px] transition-all border ${
-                        state.points >= r.cost
-                          ? state.colorMap.card + " active:scale-95"
-                          : "opacity-30 pointer-events-none border-transparent"
-                      }`}
-                    >
-                      <div className="flex flex-col items-start text-left">
-                        <span
-                          className={`font-bold text-lg ${
-                            state.isDark ? "text-white" : "text-slate-800"
-                          }`}
-                        >
-                          {r.title}
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl p-3 bg-purple-500 text-white rounded-2xl">
+                        <Gift size={24} />
+                      </span>
+                      <div className="flex flex-col items-start">
+                        <span className="font-bold text-lg text-purple-600 dark:text-purple-400">
+                          Mystery Box
                         </span>
-                        <span
-                          className={`text-xs font-semibold ${state.colorMap.textMuted}`}
-                        >
-                          Time Value: {r.duration}m
+                        <span className="text-xs font-bold opacity-60">
+                          A fun gamble!
                         </span>
                       </div>
-                      <span className="text-amber-500 font-black text-lg">
-                        {r.cost} 💎
-                      </span>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        state.setRewards(state.rewards.filter((x) => x.id !== r.id));
-                      }}
-                      className="absolute -top-3 -right-3 bg-rose-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-black opacity-0 group-hover:opacity-100 shadow-xl transition-all"
+                    </div>
+                    <span className="text-amber-500 font-black">30 💎</span>
+                  </button>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!state.newRewardTitle || !state.newRewardDuration)
+                        return;
+                      state.setRewards([
+                        {
+                          title: state.newRewardTitle,
+                          duration: state.newRewardDuration,
+                          cost: state.newRewardDuration,
+                          id: Date.now().toString(),
+                        },
+                        ...state.rewards,
+                      ]);
+                      state.setNewRewardTitle("");
+                      state.setNewRewardDuration(15);
+                    }}
+                    className={`p-4 rounded-2xl mt-8 mb-6 flex flex-col gap-3 ${state.colorMap.card}`}
+                  >
+                    <h3
+                      className={`text-center font-bold ${
+                        state.isDark ? "text-white" : "text-slate-800"
+                      }`}
                     >
-                      <X size={14} />
+                      Add Custom Reward
+                    </h3>
+                    <input
+                      value={state.newRewardTitle}
+                      onChange={(e) => state.setNewRewardTitle(e.target.value)}
+                      placeholder="Reward Name (e.g. 'Play a game')"
+                      className={`w-full px-4 py-3 rounded-xl text-sm ${state.colorMap.input}`}
+                    />
+                    <label
+                      className={`text-center text-xs font-bold mb-1 ${state.colorMap.textMuted}`}
+                    >
+                      How much time is this reward worth?
+                    </label>
+                    <div className="grid grid-cols-5 gap-2">
+                      {[
+                        { label: "5m", value: 5 },
+                        { label: "15m", value: 15 },
+                        { label: "30m", value: 30 },
+                        { label: "1h", value: 60 },
+                        { label: "2h", value: 120 },
+                      ].map((d) => (
+                        <button
+                          type="button"
+                          key={d.value}
+                          onClick={() => state.setNewRewardDuration(d.value)}
+                          className={`px-2 py-2 text-xs font-bold rounded-lg transition-colors ${
+                            state.newRewardDuration === d.value
+                              ? "bg-purple-600 text-white"
+                              : state.isDark
+                              ? "bg-zinc-800"
+                              : "bg-slate-100"
+                          }`}
+                        >
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="submit"
+                      className="bg-purple-600 w-full h-12 flex items-center justify-center rounded-2xl font-bold text-white mt-2"
+                    >
+                      <Plus size={20} className="mr-2" />
+                      Add Reward
                     </button>
-                  </div>
-                ))}
+                  </form>
+
+                  {state.rewards.map((r, i) => (
+                    <div key={`reward-${r.id}-${i}`} className="relative group">
+                      <button
+                        onClick={() => state.claimReward(r)}
+                        className={`w-full flex justify-between items-center p-6 rounded-2xl border ${
+                          state.points >= r.cost
+                            ? `${state.colorMap.card} active:scale-95`
+                            : "opacity-40 pointer-events-none"
+                        }`}
+                      >
+                        <div className="text-left">
+                          <div
+                            className={`font-bold text-lg ${
+                              state.isDark ? "text-white" : "text-slate-800"
+                            }`}
+                          >
+                            {r.title}
+                          </div>
+                          <div className={`text-xs ${state.colorMap.textMuted}`}>
+                            Value: {r.duration}m
+                          </div>
+                        </div>
+                        <span className="text-amber-500 font-black">
+                          {r.cost} 💎
+                        </span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          state.setRewards(
+                            state.rewards.filter((x) => x.id !== r.id)
+                          );
+                        }}
+                        className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </motion.div>

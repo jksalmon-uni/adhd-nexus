@@ -21,3 +21,4 @@ export type Ritual = {
   lastCompletedDate: string;
 };
 export type Theme = "light" | "dark" | "system";
+export type ClaimedReward = { instanceId: string; title: string; duration: number; claimedAt: string; used: boolean; };
