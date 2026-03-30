@@ -84,10 +84,12 @@ export default function RechargeTab({
             <motion.button
               key={`bubble-${i}`}
               onClick={() => handlePopBubble(i)}
-              animate={isPopped ? { scale: [1, 0.9, 1] } : {}}
+              animate={isPopped ? { scale: [1, 0.85, 0.9] } : {}}
               transition={{ duration: 0.2 }}
               className={`w-12 h-12 rounded-full transition-all duration-200 focus:outline-none ${
-                isPopped ? "bg-purple-300 shadow-[inset_0_4px_8px_rgba(0,0,0,0.1)]" : "bg-purple-200 shadow-[0_4px_8px_rgba(0,0,0,0.15),inset_0_-4px_8px_rgba(0,0,0,0.1)]"
+                isPopped
+                  ? "bg-black/5 dark:bg-white/5 border-2 border-black/10 dark:border-white/10 shadow-inner scale-90 opacity-60"
+                  : "bg-purple-400 shadow-[0_4px_8px_rgba(0,0,0,0.2),inset_0_-4px_8px_rgba(0,0,0,0.2)] scale-100"
               }`}
             />
           ))}

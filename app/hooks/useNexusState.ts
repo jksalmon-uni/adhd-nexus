@@ -32,7 +32,7 @@ export function useNexusState() {
 
   // --- 1. CORE STATE ---
   const [activeTab, setActiveTab] = useState<
-    "focus" | "calendar" | "recharge" | "rewards"
+    "focus" | "calendar" | "recharge" | "rewards" | "scramble"
   >("focus");
   const [greeting, setGreeting] = useState("Hello!");
   const [isLoaded, setIsLoaded] = useState(false);

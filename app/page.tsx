@@ -1,6 +1,7 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import ScramblePadTab from "./components/Tabs/ScramblePadTab";
 import {
   Brain,
   Gift,
@@ -155,6 +156,13 @@ export default function Home() {
                 getTaskStyles={state.getTaskStyles}
               />
             )}
+
+{state.activeTab === "scramble" && (
+  <ScramblePadTab 
+    isDark={state.isDark} 
+    colorMap={state.colorMap} 
+  />
+)}
 
             {state.activeTab === "recharge" && (
               <RechargeTab

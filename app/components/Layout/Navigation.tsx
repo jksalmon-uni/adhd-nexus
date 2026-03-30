@@ -1,9 +1,10 @@
 import { motion, LayoutGroup } from "framer-motion";
 import { Target, Calendar as CalIcon, Leaf, Gem } from "lucide-react";
+import { PenTool } from "lucide-react";
 
 interface NavigationProps {
-  activeTab: "focus" | "calendar" | "recharge" | "rewards";
-  setActiveTab: (tab: "focus" | "calendar" | "recharge" | "rewards") => void;
+  activeTab: "focus" | "calendar" | "scramble" | "recharge" | "rewards" | "scramble";
+  setActiveTab: (tab: "focus" | "calendar" | "recharge" | "rewards" | "scramble") => void;
   isDark: boolean;
   colorMap: Record<string, string>;
 }
@@ -17,7 +18,7 @@ export default function Navigation({
   return (
     <LayoutGroup>
       <nav
-        className={`grid grid-cols-4 gap-1 p-1.5 rounded-2xl mb-8 ${
+        className={`grid grid-cols-5 gap-1 p-1.5 rounded-2xl mb-8 ${
           isDark ? "bg-zinc-900" : "bg-slate-200"
         }`}
       >
@@ -57,6 +58,17 @@ export default function Navigation({
           </span>
           <span className="relative z-10">Calendar</span>
         </button>
+        <button
+  onClick={() => setActiveTab("scramble")}
+  className={`flex flex-col items-center gap-1 p-2 transition-all ${
+    activeTab === "scramble"
+      ? "text-emerald-500 scale-110 font-black"
+      : `${colorMap.textMuted} hover:text-emerald-400`
+  }`}
+>
+  <PenTool size={24} strokeWidth={activeTab === "scramble" ? 2.5 : 2} />
+  <span className="text-[10px] font-bold">Scramble</span>
+</button>
         <button
           onClick={() => setActiveTab("recharge")}
           className={`relative py-3.5 rounded-xl text-[10px] font-bold capitalize transition-all flex flex-col items-center gap-1 ${
