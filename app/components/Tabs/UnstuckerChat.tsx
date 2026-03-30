@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 interface UnstuckerChatProps {
   isDark: boolean;
   colorMap: any;
+  initialTask?: string; // <--- The new prop
 }
 
 interface Message {
@@ -14,7 +15,7 @@ interface Message {
   content: string;
 }
 
-export default function UnstuckerChat({ isDark, colorMap }: UnstuckerChatProps) {
+export default function UnstuckerChat({ isDark, colorMap, initialTask }: UnstuckerChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -22,11 +23,12 @@ export default function UnstuckerChat({ isDark, colorMap }: UnstuckerChatProps) 
       content: "I am the Unstucker. Tell me what task is paralyzing you right now, and I will break it down into microscopic steps.",
     },
   ]);
-  const [input, setInput] = useState("");
+  
+  // Auto-fill the input if she clicked the wand on a specific task
+  const [input, setInput] = useState(initialTask ? `I am overwhelmed by: ${initialTask}` : "");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to the bottom when a new message appears
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -37,34 +39,55 @@ export default function UnstuckerChat({ isDark, colorMap }: UnstuckerChatProps) 
     e.preventDefault();
     if (!input.trim()) return;
 
+    // 1. Put her message on the screen immediately
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
+    
+    // 2. Clear the box and show the loading spinner
+    const currentInput = input; // save it before clearing
     setInput("");
     setIsTyping(true);
 
-    // ==========================================
-    // MOCK AI LOGIC (Replace with real API later)
-    // ==========================================
-    setTimeout(() => {
+    try {
+      // 3. Talk to our new secure API route
+      const response = await fetch("/api/unstucker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: currentInput }),
+      });
+
+      if (!response.ok) throw new Error("API failed");
+      
+      const data = await response.json();
+
+      // 4. Put the AI's real response on the screen
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `Let's make "${userMsg.content}" ridiculously easy. Do ONLY these three things:\n\n1. Stand up and walk to the area.\n2. Find ONE piece of actual garbage and throw it away.\n3. Put ONE item back where it belongs.\n\nStop there. You can do this.`,
+        content: data.result,
       };
-      setMessages((prev) => [...prev, botMsg]);
-      setIsTyping(false);
       
-      // Play a satisfying "un-stuck" sound
+      setMessages((prev) => [...prev, botMsg]);
+      
+      // Play the satisfying pop sound
       const audio = new Audio("/sounds/bubble_pop.mp3");
       audio.play().catch(() => {});
-    }, 1500);
-    // ==========================================
+
+    } catch (error) {
+      // Fallback if the internet drops or the API fails
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Oops, my brain disconnected for a second. Try asking me again!",
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
-    <div className={`flex flex-col h-[60vh] rounded-[32px] overflow-hidden border shadow-sm ${colorMap.card}`}>
-      
-      {/* Header */}
+    <div className={`flex flex-col h-full rounded-[32px] overflow-hidden border shadow-sm ${colorMap.card}`}>
       <div className={`p-4 border-b flex items-center gap-3 ${isDark ? 'border-zinc-800 bg-zinc-900/50' : 'border-slate-100 bg-slate-50/50'}`}>
         <div className="p-2 bg-purple-500 rounded-xl text-white shadow-md">
           <Sparkles size={20} />
@@ -75,7 +98,6 @@ export default function UnstuckerChat({ isDark, colorMap }: UnstuckerChatProps) 
         </div>
       </div>
 
-      {/* Chat History */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m) => (
           <motion.div
@@ -115,7 +137,6 @@ export default function UnstuckerChat({ isDark, colorMap }: UnstuckerChatProps) 
         )}
       </div>
 
-      {/* Input Form */}
       <form onSubmit={handleSend} className={`p-4 border-t ${isDark ? 'border-zinc-800' : 'border-slate-100'}`}>
         <div className="relative flex items-center">
           <input

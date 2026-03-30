@@ -1,6 +1,9 @@
-import { motion } from "framer-motion";
-import { Leaf, Play } from "lucide-react";
+"use client";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Leaf, Play, Wand2, X } from "lucide-react";
 import type { Task, Priority, Ritual } from "../../types";
+import UnstuckerChat from "./UnstuckerChat";
 
 interface FocusTabProps {
   rituals: Ritual[];
@@ -55,6 +58,10 @@ export default function FocusTab({
   setTasks,
   getTaskStyles,
 }: FocusTabProps) {
+  
+  // New state for the Unstucker modal
+  const [unstuckTask, setUnstuckTask] = useState<string | null>(null);
+
   return (
     <div className="space-y-6">
       {rituals.some((r) => !r.completed) && (
@@ -226,7 +233,7 @@ export default function FocusTab({
                     }`}
                   >
                     <div
-                      className={`w-3.5 h-3.5 rounded-full border-2 shex-shrink-0 ${
+                      className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 ${
                         holdingTaskId === t.id
                           ? "border-emerald-500"
                           : t.priority === "urgent"
@@ -243,6 +250,21 @@ export default function FocusTab({
                   <span className="text-amber-500 font-black text-xs pr-2">
                     +{t.duration || 5}💎
                   </span>
+                  
+                  {/* UNSTUCKER BUTTON */}
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUnstuckTask(t.text);
+                    }}
+                    className="p-2 rounded-xl transition-all bg-purple-500/10 text-purple-500 hover:bg-purple-500 hover:text-white"
+                    title="Help me start this"
+                  >
+                    <Wand2 size={14} />
+                  </button>
+
                   <button
                     onMouseDown={(e) => e.stopPropagation()}
                     onTouchStart={(e) => e.stopPropagation()}
@@ -336,6 +358,41 @@ export default function FocusTab({
             </motion.div>
           ))}
       </div>
+
+      {/* The Unstucker Modal */}
+      <AnimatePresence>
+        {unstuckTask && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md h-[80vh] flex flex-col"
+            >
+              <button
+                onClick={() => setUnstuckTask(null)}
+                className="absolute -top-12 right-0 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors z-50"
+              >
+                <X size={20} />
+              </button>
+              
+              <div className="flex-1 w-full bg-white dark:bg-zinc-900 rounded-[32px] overflow-hidden shadow-2xl relative">
+                <UnstuckerChat 
+                  isDark={isDark} 
+                  colorMap={colorMap} 
+                  initialTask={unstuckTask} 
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
