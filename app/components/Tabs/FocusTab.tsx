@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Leaf, Play, Wand2, X } from "lucide-react";
+import { Leaf, Play, Wand2, X, Sparkles, Loader2 } from "lucide-react";
 import type { Task, Priority, Ritual } from "../../types";
 import UnstuckerChat from "./UnstuckerChat";
 
@@ -59,11 +59,53 @@ export default function FocusTab({
   getTaskStyles,
 }: FocusTabProps) {
   
-  // New state for the Unstucker modal
   const [unstuckTask, setUnstuckTask] = useState<string | null>(null);
+  const [chosenTaskId, setChosenTaskId] = useState<string | null>(null);
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+
+  // UPDATED: Now points to the dedicated breakdown brain!
+  const handleAIBreakdown = async (taskId: string, taskText: string) => {
+    setGeneratingFor(taskId);
+    try {
+      const response = await fetch("/api/breakdown", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: taskText }), // Much cleaner payload
+      });
+
+      if (!response.ok) throw new Error("API failed");
+      const data = await response.json();
+
+      const newSubtasks = data.result
+        .split('\n')
+        .filter((line: string) => line.trim().match(/^\d+\./))
+        .map((line: string, index: number) => {
+          const cleanText = line.replace(/^\d+\.\s*/, '').trim();
+          return {
+            id: `auto-${Date.now()}-${index}`,
+            text: cleanText,
+            completed: false,
+          };
+        })
+        .filter((subtask: any) => subtask.text !== ""); 
+
+      if (newSubtasks.length > 0) {
+        setTasks(tasks.map(t =>
+          t.id === taskId
+            ? { ...t, subTasks: [...t.subTasks, ...newSubtasks] }
+            : t
+        ));
+      }
+    } catch (error) {
+      console.error("Failed to generate subtasks", error);
+    } finally {
+      setGeneratingFor(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {/* RITUALS */}
       {rituals.some((r) => !r.completed) && (
         <div className={`p-5 rounded-4xl border ${colorMap.card} shadow-sm`}>
           <h3 className="text-[10px] font-black uppercase opacity-40 mb-3 px-2 flex items-center gap-2">
@@ -93,6 +135,7 @@ export default function FocusTab({
         </div>
       )}
 
+      {/* ADD TASK FORM */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -179,26 +222,28 @@ export default function FocusTab({
         </button>
       </form>
 
+      {/* YOUR DAY HEADER & CHOICE HELPER */}
       <div className="flex justify-between items-center mb-4 px-2 mt-8">
         <h2 className={`text-xl font-bold ${colorMap.textMain}`}>Your Day</h2>
-        {tasks.filter((t) => t.date === new Date().toISOString().split("T")[0])
-          .length > 1 && (
+        
+        {tasks.filter((t) => t.date === new Date().toISOString().split("T")[0]).length > 1 && (
           <button
             onClick={() => {
               const today = tasks.filter(
                 (t) => t.date === new Date().toISOString().split("T")[0]
               );
-              setRandomTaskId(
-                today[Math.floor(Math.random() * today.length)].id
-              );
+              const winner = today[Math.floor(Math.random() * today.length)];
+              setChosenTaskId(winner.id);
+              setRandomTaskId(winner.id);
             }}
-            className="text-[10px] font-black uppercase px-3 py-1 bg-amber-500/10 text-amber-500 rounded-full border border-amber-500/20"
+            className="text-[10px] font-black uppercase px-3 py-1 bg-amber-500/10 text-amber-500 rounded-full border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all active:scale-95"
           >
             🎲 Choice Helper
           </button>
         )}
       </div>
 
+      {/* TASK LIST */}
       <div className="space-y-4">
         {tasks
           .filter((t) => t.date === new Date().toISOString().split("T")[0])
@@ -206,9 +251,13 @@ export default function FocusTab({
             <motion.div
               layout
               key={`task-${t.id}-${index}`}
-              className={`relative overflow-hidden rounded-4xl border-2 transition-all ${
+              className={`relative overflow-hidden rounded-4xl border-2 transition-all duration-300 ${
                 colorMap.card
-              } ${getTaskStyles(t.priority)}`}
+              } ${
+                chosenTaskId === t.id 
+                  ? "border-amber-500 ring-4 ring-amber-500/20 scale-[1.02] shadow-xl z-10" 
+                  : getTaskStyles(t.priority)
+              }`}
             >
               {holdingTaskId === t.id && (
                 <motion.div
@@ -251,7 +300,7 @@ export default function FocusTab({
                     +{t.duration || 5}💎
                   </span>
                   
-                  {/* UNSTUCKER BUTTON */}
+                  {/* UNSTUCKER CHAT BUTTON */}
                   <button
                     onMouseDown={(e) => e.stopPropagation()}
                     onTouchStart={(e) => e.stopPropagation()}
@@ -260,7 +309,7 @@ export default function FocusTab({
                       setUnstuckTask(t.text);
                     }}
                     className="p-2 rounded-xl transition-all bg-purple-500/10 text-purple-500 hover:bg-purple-500 hover:text-white"
-                    title="Help me start this"
+                    title="Talk to the Unstucker"
                   >
                     <Wand2 size={14} />
                   </button>
@@ -279,42 +328,60 @@ export default function FocusTab({
                   </button>
                 </div>
               </div>
+              
               <div
                 className={`p-5 pt-0 border-t ${
                   isDark ? "border-zinc-800" : "border-slate-50"
                 }`}
               >
-                <input
-                  type="text"
-                  placeholder="+ Break it down?"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      setTasks(
-                        tasks.map((x) =>
-                          x.id === t.id
-                            ? {
-                                ...x,
-                                subTasks: [
-                                  ...x.subTasks,
-                                  {
-                                    text: e.currentTarget.value,
-                                    completed: false,
-                                    id: Date.now().toString(),
-                                  },
-                                ],
-                              }
-                            : x
-                        )
-                      );
-                      e.currentTarget.value = "";
-                    }
-                  }}
-                  className={`w-full text-xs p-2 mt-4 rounded-xl bg-transparent border border-dashed ${
-                    isDark
-                      ? "border-zinc-700 text-zinc-400"
-                      : "border-slate-200 text-slate-500"
-                  } focus:opacity-100 outline-none`}
-                />
+                {/* SUBTASK GENERATOR BAR */}
+                <div className="flex items-center gap-2 mt-4">
+                  <input
+                    type="text"
+                    placeholder="Type a subtask or let AI break it down..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && e.currentTarget.value.trim() !== "") {
+                        setTasks(
+                          tasks.map((x) =>
+                            x.id === t.id
+                              ? {
+                                  ...x,
+                                  subTasks: [
+                                    ...x.subTasks,
+                                    {
+                                      text: e.currentTarget.value,
+                                      completed: false,
+                                      id: Date.now().toString(),
+                                    },
+                                  ],
+                                }
+                              : x
+                          )
+                        );
+                        e.currentTarget.value = "";
+                      }
+                    }}
+                    className={`flex-1 text-xs p-3 rounded-xl bg-transparent border border-dashed ${
+                      isDark
+                        ? "border-zinc-700 text-zinc-400 focus:border-purple-500"
+                        : "border-slate-200 text-slate-500 focus:border-purple-500"
+                    } focus:opacity-100 outline-none transition-colors`}
+                  />
+                  <button
+                    onClick={() => handleAIBreakdown(t.id, t.text)}
+                    disabled={generatingFor === t.id}
+                    className="p-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                    title="Auto-Generate Subtasks"
+                  >
+                    {generatingFor === t.id ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={16} />
+                    )}
+                  </button>
+                </div>
+
+                {/* SUBTASKS LIST */}
                 <div className="space-y-2 mt-4">
                   {t.subTasks.map((s, i) => (
                     <button
@@ -350,7 +417,7 @@ export default function FocusTab({
                       >
                         {s.completed && "✓"}
                       </div>
-                      {s.text}
+                      <span className="text-left flex-1">{s.text}</span>
                     </button>
                   ))}
                 </div>
@@ -359,7 +426,7 @@ export default function FocusTab({
           ))}
       </div>
 
-      {/* The Unstucker Modal */}
+      {/* THE UNSTUCKER MODAL */}
       <AnimatePresence>
         {unstuckTask && (
           <motion.div
