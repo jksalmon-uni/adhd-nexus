@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 interface UnstuckerChatProps {
   isDark: boolean;
   colorMap: any;
-  initialTask?: string; // <--- The new prop
+  initialTask?: string;
 }
 
 interface Message {
@@ -24,7 +24,6 @@ export default function UnstuckerChat({ isDark, colorMap, initialTask }: Unstuck
     },
   ]);
   
-  // Auto-fill the input if she clicked the wand on a specific task
   const [input, setInput] = useState(initialTask ? `I am overwhelmed by: ${initialTask}` : "");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -39,28 +38,28 @@ export default function UnstuckerChat({ isDark, colorMap, initialTask }: Unstuck
     e.preventDefault();
     if (!input.trim()) return;
 
-    // 1. Put her message on the screen immediately
+    // 1. Add the new user message to the array
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: input };
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg]; // Capture the full history!
     
-    // 2. Clear the box and show the loading spinner
-    const currentInput = input; // save it before clearing
+    setMessages(updatedMessages); // Update the UI
     setInput("");
     setIsTyping(true);
 
     try {
-      // 3. Talk to our new secure API route
+      // 2. Filter out the initial "Welcome" message so we don't confuse the AI, then send the rest!
+      const apiMessages = updatedMessages.filter(m => m.id !== "welcome");
+
       const response = await fetch("/api/unstucker", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task: currentInput }),
+        body: JSON.stringify({ messages: apiMessages }), // Sending the array here!
       });
 
       if (!response.ok) throw new Error("API failed");
       
       const data = await response.json();
 
-      // 4. Put the AI's real response on the screen
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -69,12 +68,10 @@ export default function UnstuckerChat({ isDark, colorMap, initialTask }: Unstuck
       
       setMessages((prev) => [...prev, botMsg]);
       
-      // Play the satisfying pop sound
       const audio = new Audio("/sounds/bubble_pop.mp3");
       audio.play().catch(() => {});
 
     } catch (error) {
-      // Fallback if the internet drops or the API fails
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",

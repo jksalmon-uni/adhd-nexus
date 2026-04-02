@@ -35,7 +35,7 @@ export default function ScramblePadTab({ isDark, colorMap }: ScramblePadTabProps
   const handleIncinerate = () => {
     if (canvasRef.current) {
       canvasRef.current.clearCanvas();
-      const audio = new Audio("/sounds/bubble_pop.mp3");
+      const audio = new Audio("/sounds/burn.mp3");
       audio.play().catch(() => {});
     }
   };

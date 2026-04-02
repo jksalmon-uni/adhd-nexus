@@ -1,36 +1,45 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-console.log("Did the server find the key?", process.env.GEMINI_API_KEY ? "YES!" : "NOPE, IT IS MISSING.");
-
-// Initialize the AI with your secret key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(req: Request) {
   try {
-    const { task } = await req.json();
+    const { messages } = await req.json();
 
-    // We use the fast 'flash' model and inject the strict ADHD instructions
-   const model = genAI.getGenerativeModel({
+    const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-lite",
-      systemInstruction: `You are an executive function prosthetic for someone with severe ADHD task paralysis. They will give you an overwhelming task. Your ONLY job is to break it down into exactly 3 highly specific, actionable, physical steps.
+      systemInstruction: `You are an expert ADHD executive function coach. You have two distinct modes depending on what the user asks for:
 
-CRITICAL RULES:
-- NEVER invent furniture, organizational systems, or tools (e.g., do not say "go to the filing cabinet" or "get a binder" unless they mention one). 
-- Assume their environment is currently chaotic. 
-- If the task could be digital, focus on opening the specific app or website.
-- If it's physical, focus on finding just ONE item.
+MODE 1: TASK PARALYSIS (Default)
+If the user is overwhelmed, stuck, or asks how to start a task:
+- Break the task into exactly 3 microscopic, highly actionable, physical steps.
+- Assume a chaotic environment (don't invent furniture).
+- Output ONLY the numbered list 1, 2, 3.
+- Step 3 MUST end with: "Stop there. You can do this."
 
-Follow this exact formula:
-1. Step 1 MUST be locating the device or the very first physical item (e.g., "Open your laptop," "Find your passport," or "Locate your phone").
-2. Step 2 MUST be the absolute smallest unit of actual progress (e.g., "Open your email app and search 'flight'", or "Put the passport on your bed").
-3. Step 3 MUST be a tiny continuation, ending with the exact phrase: "Stop there. You can do this."
+MODE 2: PLANNING & LISTS
+If the user explicitly asks for a list, a plan, or says "list everything I need" (like packing or grocery shopping):
+- Do NOT use the 3-step rule. Instead, provide the full list they asked for.
+- To prevent ADHD overwhelm, you MUST group the items into clear, bolded categories (e.g., **Clothes**, **Toiletries**, **Electronics**).
+- Keep descriptions short (e.g., "7x underwear" not "seven pairs of comfortable underwear for the week").
+- End with a brief, encouraging sign-off like: "You've got this. Just focus on one category at a time."
 
-Do NOT say hello. Do NOT use sub-bullets. Output ONLY the numbered list 1, 2, 3.`
+Never say "Hello" or give long, robotic introductions. Just output the appropriate response.`
     });
 
-    // Ask the AI to process the task
-    const result = await model.generateContent(task);
+    // Format our app's messages into the format Google's AI expects
+    const history = messages.slice(0, -1).map((msg: any) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }],
+    }));
+
+    // Extract the very last thing the user typed
+    const lastMessage = messages[messages.length - 1].content;
+
+    // Start a chat with the history, then send the new message
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessage(lastMessage);
     const text = result.response.text();
 
     return NextResponse.json({ result: text });
