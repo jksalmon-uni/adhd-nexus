@@ -440,6 +440,7 @@ export default function Home() {
             colorMap={state.colorMap}
             isDark={state.isDark}
             formatTime={state.formatTime}
+            toggleSubTask={state.toggleSubTask}
           />
         )}
       </AnimatePresence>

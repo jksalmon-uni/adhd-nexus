@@ -1,7 +1,8 @@
 "use client";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { X, CloudRain, Coffee, Headphones } from "lucide-react";
-import { Task } from "../../types";
+import { X, CloudRain, Coffee, Headphones, CheckCircle2, Circle, CircleDashed, Hourglass } from "lucide-react";
+import { Task, SubTask } from "../../types";
 
 interface FocusTimerModalProps {
   focusTask: Task;
@@ -14,6 +15,7 @@ interface FocusTimerModalProps {
   colorMap: Record<string, string>;
   isDark: boolean;
   formatTime: (seconds: number) => string;
+  toggleSubTask?: (taskId: string, subTaskId: string) => void;
 }
 
 export default function FocusTimerModal({
@@ -27,23 +29,36 @@ export default function FocusTimerModal({
   colorMap,
   isDark,
   formatTime,
+  toggleSubTask,
 }: FocusTimerModalProps) {
+  const [timerStyle, setTimerStyle] = useState<'circle' | 'sand'>('circle');
+
+  const totalSeconds = focusTask.duration * 60;
+  const progress = totalSeconds > 0 ? focusRemainingSeconds / totalSeconds : 0;
+  
+  const circumference = 879.6459; // 2 * Math.PI * 140
+  const strokeDashoffset = isOvertime ? 0 : circumference - progress * circumference;
+
+  const completedSubtasksCount = focusTask.subTasks?.filter(s => s.completed).length || 0;
+  const totalSubtasksCount = focusTask.subTasks?.length || 0;
+  const firstUncheckedId = focusTask.subTasks?.find(s => !s.completed)?.id;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-12 ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-6 md:p-12 ${
         isOvertime ? (isDark ? "bg-amber-950/95" : "bg-amber-50/95") : colorMap.bg
-      } transition-colors duration-500`}
+      } transition-colors duration-500 overflow-hidden`}
     >
-      <div className="absolute top-12 left-0 right-0 px-8 flex justify-between items-center">
+      <div className="absolute top-8 md:top-12 left-0 right-0 px-8 flex justify-between items-center z-10">
         <div className={`flex rounded-full p-1 border ${colorMap.card}`}>
           {(["none", "rain", "cafe", "lofi"] as const).map((a) => (
             <button
               key={`amb-${a}`}
               onClick={() => setAmbientTrack(a)}
-              className={`p-3 rounded-full transition-all ${
+              className={`p-2 md:p-3 rounded-full transition-all ${
                 ambientTrack === a
                   ? `${isOvertime ? "bg-amber-500" : "bg-emerald-500"} text-white shadow-lg`
                   : `${colorMap.textMuted} hover:opacity-80`
@@ -58,39 +73,156 @@ export default function FocusTimerModal({
         </div>
         <button
           onClick={() => endFocusSession(false)}
-          className={`px-6 py-3 rounded-full border font-bold uppercase tracking-widest text-xs active:scale-95 transition-all ${colorMap.card} ${colorMap.textMain}`}
+          className={`px-4 md:px-6 py-2 md:py-3 rounded-full border font-bold uppercase tracking-widest text-xs active:scale-95 transition-all ${colorMap.card} ${colorMap.textMain}`}
         >
           {isOvertime ? "End Session" : "Abort"}
         </button>
       </div>
 
-      <h2 className={`text-3xl font-black text-center mb-2 transition-colors ${
-          isOvertime ? "text-amber-600 dark:text-amber-400" : colorMap.textMain
-        }`}
-      >
-        {isOvertime ? "Flow Zone" : focusTask.text}
-      </h2>
-      <p className={`text-sm font-bold ${isOvertime ? "text-amber-500" : "text-emerald-500"}`}>
-        {isOvertime ? "In the final polish..." : "Focusing..."}
-      </p>
-
-      <div className="my-8">
-        <div className={`text-7xl font-mono font-black tabular-nums tracking-tighter drop-shadow-md bg-white/20 dark:bg-black/20 backdrop-blur-sm px-6 py-3 rounded-3xl transition-colors ${
-            isOvertime ? "text-amber-600 dark:text-amber-400" : colorMap.textMain
-          }`}
-        >
-          {isOvertime ? `+ ${formatTime(overtimeSeconds)}` : formatTime(focusRemainingSeconds)}
+      <div className="w-full max-w-4xl flex flex-col items-center justify-center flex-1 min-h-0 pt-16 md:pt-12">
+        
+        <div className="text-center mb-6 shrink-0 flex flex-col items-center">
+          <h2 className={`text-3xl md:text-5xl font-black mb-2 transition-colors ${
+              isOvertime ? "text-amber-600 dark:text-amber-400" : colorMap.textMain
+            }`}
+          >
+            {isOvertime ? "Flow Zone" : focusTask.text}
+          </h2>
+          <p className={`text-sm md:text-base font-bold mb-4 ${isOvertime ? "text-amber-500" : "text-emerald-500"}`}>
+            {isOvertime ? "In the final polish..." : "Focusing..."}
+          </p>
+          
+          <div className="flex gap-2 bg-black/5 dark:bg-white/5 p-1 rounded-full mb-2">
+            <button onClick={() => setTimerStyle('circle')} className={`p-2 rounded-full transition-all ${timerStyle === 'circle' ? 'bg-white dark:bg-zinc-800 shadow-sm' : 'opacity-50 hover:opacity-100'}`} title="Circular Timer">
+              <CircleDashed size={16} className={timerStyle === 'circle' ? (isOvertime ? "text-amber-500" : "text-emerald-500") : colorMap.textMuted} />
+            </button>
+            <button onClick={() => setTimerStyle('sand')} className={`p-2 rounded-full transition-all ${timerStyle === 'sand' ? 'bg-white dark:bg-zinc-800 shadow-sm' : 'opacity-50 hover:opacity-100'}`} title="Sand Timer">
+              <Hourglass size={16} className={timerStyle === 'sand' ? (isOvertime ? "text-amber-500" : "text-emerald-500") : colorMap.textMuted} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      <button
-        onClick={() => endFocusSession(true)}
-        className={`${
-          isOvertime ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"
-        } text-white font-bold py-4 px-10 rounded-full text-lg transition-colors`}
-      >
-        Have you completed it?
-      </button>
+        <div className="relative flex items-center justify-center mb-8 shrink-0">
+          {timerStyle === 'circle' ? (
+            <svg className="w-64 h-64 md:w-80 md:h-80 transform -rotate-90" viewBox="0 0 320 320">
+              <circle
+                cx="160"
+                cy="160"
+                r="140"
+                fill="transparent"
+                stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}
+                strokeWidth="12"
+              />
+              <circle
+                cx="160"
+                cy="160"
+                r="140"
+                fill="transparent"
+                stroke={isOvertime ? (isDark ? "#fbbf24" : "#f59e0b") : (isDark ? "#10b981" : "#10b981")}
+                strokeWidth="12"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                className="transition-all duration-1000 ease-linear"
+              />
+            </svg>
+          ) : (
+            <div className="w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+              <svg viewBox="0 0 100 200" className="w-32 h-64 md:w-40 md:h-80 drop-shadow-xl">
+                <defs>
+                  <clipPath id="topSandClip">
+                     <path d="M 10 10 L 90 10 C 90 40 60 80 55 95 L 45 95 C 40 80 10 40 10 10 Z" />
+                  </clipPath>
+                  <clipPath id="bottomSandClip">
+                     <path d="M 45 105 L 55 105 C 60 120 90 160 90 190 L 10 190 C 10 160 40 120 45 105 Z" />
+                  </clipPath>
+                </defs>
+                <path d="M 10 10 L 90 10 C 90 40 60 80 55 95 L 45 95 C 40 80 10 40 10 10 Z M 45 105 L 55 105 C 60 120 90 160 90 190 L 10 190 C 10 160 40 120 45 105 Z" 
+                      fill={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} 
+                      stroke={isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"} strokeWidth="2" />
+                
+                <g clipPath="url(#topSandClip)">
+                   <rect x="0" y={10 + (1 - progress) * 85} width="100" height={85 * progress} fill={isOvertime ? (isDark ? "#fbbf24" : "#f59e0b") : "#10b981"} className="transition-all duration-1000 ease-linear" />
+                </g>
+                
+                <g clipPath="url(#bottomSandClip)">
+                   <rect x="0" y={190 - (1 - progress) * 85} width="100" height={85 * (1 - progress)} fill={isOvertime ? (isDark ? "#fbbf24" : "#f59e0b") : "#10b981"} className="transition-all duration-1000 ease-linear" />
+                </g>
+                
+                {progress > 0 && progress < 1 && (
+                  <rect x="49" y="95" width="2" height="95" fill={isOvertime ? (isDark ? "#fbbf24" : "#f59e0b") : "#10b981"} opacity="0.5" />
+                )}
+              </svg>
+            </div>
+          )}
+          
+          <div className={`absolute flex flex-col items-center justify-center ${timerStyle === 'sand' ? 'bg-white/80 dark:bg-black/80 backdrop-blur-sm px-6 py-4 rounded-3xl shadow-lg border border-black/5 dark:border-white/5' : ''}`}>
+            <div className={`text-5xl md:text-7xl font-mono font-black tabular-nums tracking-tighter transition-colors ${
+                isOvertime ? "text-amber-600 dark:text-amber-400" : colorMap.textMain
+              }`}
+            >
+              {isOvertime ? `+${formatTime(overtimeSeconds)}` : formatTime(focusRemainingSeconds)}
+            </div>
+            {totalSubtasksCount > 0 && (
+              <div className={`mt-2 text-sm font-bold ${isOvertime ? "text-amber-500/80" : "text-emerald-500/80"}`}>
+                {completedSubtasksCount} / {totalSubtasksCount} Subtasks
+              </div>
+            )}
+          </div>
+        </div>
+
+        {totalSubtasksCount > 0 && (
+          <div className={`w-full max-w-md flex-1 overflow-y-auto min-h-0 mb-8 rounded-3xl p-4 border shadow-inner scrollbar-thin ${isDark ? 'bg-black/20 border-white/5 scrollbar-thumb-zinc-700' : 'bg-black/5 border-black/5 scrollbar-thumb-slate-300'}`}>
+            <div className="space-y-3">
+              {focusTask.subTasks.map((subTask: SubTask) => {
+                const isFirstUnchecked = subTask.id === firstUncheckedId;
+                let subTaskClasses = "";
+                let iconColor = "";
+
+                if (subTask.completed) {
+                  subTaskClasses = isDark 
+                    ? "bg-zinc-900/50 text-zinc-400/50 border-transparent opacity-50"
+                    : "bg-slate-50/50 text-slate-500/50 border-transparent opacity-50";
+                  iconColor = "text-emerald-500";
+                } else if (isFirstUnchecked) {
+                  subTaskClasses = isOvertime 
+                    ? (isDark ? "bg-amber-900/20 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-500/50 text-amber-100" : "bg-amber-50 border-amber-400 shadow-md ring-1 ring-amber-400 text-amber-900")
+                    : (isDark ? "bg-emerald-900/20 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50 text-emerald-100" : "bg-emerald-50 border-emerald-400 shadow-md ring-1 ring-emerald-400 text-emerald-900");
+                  iconColor = isOvertime ? "text-amber-500" : "text-emerald-500";
+                } else {
+                  subTaskClasses = colorMap.card + " " + colorMap.textMain + " border";
+                  iconColor = colorMap.textMuted;
+                }
+
+                return (
+                  <button
+                    key={subTask.id}
+                    onClick={() => toggleSubTask && toggleSubTask(focusTask.id, subTask.id)}
+                    className={`w-full text-left flex items-start gap-3 p-4 rounded-2xl transition-all active:scale-[0.98] ${subTaskClasses}`}
+                  >
+                    <div className={`mt-0.5 shrink-0 transition-colors ${iconColor}`}>
+                      {subTask.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                    </div>
+                    <span className={`text-sm md:text-base font-medium leading-relaxed transition-all ${subTask.completed ? 'line-through' : ''}`}>
+                      {subTask.text}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={() => endFocusSession(true)}
+          className={`shrink-0 ${
+            isOvertime ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20" : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
+          } text-white font-bold py-4 px-10 rounded-full text-lg shadow-xl transition-all active:scale-95`}
+        >
+          Have you completed it?
+        </button>
+
+      </div>
     </motion.div>
   );
 }

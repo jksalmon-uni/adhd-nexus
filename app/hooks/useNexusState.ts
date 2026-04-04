@@ -314,6 +314,31 @@ export function useNexusState() {
     handleCompleteTask(taskId);
   };
 
+  const toggleSubTask = (taskId: string, subTaskId: string) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              subTasks: t.subTasks.map((s) =>
+                s.id === subTaskId ? { ...s, completed: !s.completed } : s
+              ),
+            }
+          : t
+      )
+    );
+    if (focusTask?.id === taskId) {
+      setFocusTask((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          subTasks: prev.subTasks.map((s) =>
+            s.id === subTaskId ? { ...s, completed: !s.completed } : s
+          ),
+        };
+      });
+    }
+  };
 
   const startFocusTimer = (t: Task, overrideMins?: number) => {
     if (focusIntervalRef.current) clearInterval(focusIntervalRef.current);
@@ -787,6 +812,7 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
     endFocusSession,
     handleCompleteTask,
     completeTask,
+    toggleSubTask,
     startFocusTimer,
     systemTheme,
     isDark,
