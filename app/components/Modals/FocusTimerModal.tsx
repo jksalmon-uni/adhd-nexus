@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { X, CloudRain, Coffee, Headphones, CheckCircle2, Circle, CircleDashed, Hourglass } from "lucide-react";
 import { Task, SubTask } from "../../types";
@@ -32,6 +32,7 @@ export default function FocusTimerModal({
   toggleSubTask,
 }: FocusTimerModalProps) {
   const [timerStyle, setTimerStyle] = useState<'circle' | 'sand'>('circle');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const totalSeconds = focusTask.duration * 60;
   const progress = totalSeconds > 0 ? focusRemainingSeconds / totalSeconds : 0;
@@ -43,13 +44,23 @@ export default function FocusTimerModal({
   const totalSubtasksCount = focusTask.subTasks?.length || 0;
   const firstUncheckedId = focusTask.subTasks?.find(s => !s.completed)?.id;
 
+  // Auto-scroll to the next unchecked subtask
+  useEffect(() => {
+    if (firstUncheckedId && scrollContainerRef.current) {
+      const el = scrollContainerRef.current.querySelector(`[data-subtask-id="${firstUncheckedId}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [firstUncheckedId]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-6 md:p-12 ${
-        isOvertime ? (isDark ? "bg-amber-950/95" : "bg-amber-50/95") : colorMap.bg
+        isOvertime ? (isDark ? "bg-amber-950 text-amber-50" : "bg-amber-50 text-amber-900") : colorMap.bg
       } transition-colors duration-500 overflow-hidden`}
     >
       <div className="absolute top-8 md:top-12 left-0 right-0 px-8 flex justify-between items-center z-10">
@@ -83,7 +94,7 @@ export default function FocusTimerModal({
         
         <div className="text-center mb-6 shrink-0 flex flex-col items-center">
           <h2 className={`text-3xl md:text-5xl font-black mb-2 transition-colors ${
-              isOvertime ? "text-amber-600 dark:text-amber-400" : colorMap.textMain
+              isOvertime ? (isDark ? "text-amber-400" : "text-amber-600") : colorMap.textMain
             }`}
           >
             {isOvertime ? "Flow Zone" : focusTask.text}
@@ -102,9 +113,10 @@ export default function FocusTimerModal({
           </div>
         </div>
 
-        <div className="relative flex items-center justify-center mb-8 shrink-0">
+        <div className="relative flex items-center justify-center mb-8 shrink-0 min-h-[16rem] md:min-h-[20rem]">
           {timerStyle === 'circle' ? (
             <svg className="w-64 h-64 md:w-80 md:h-80 transform -rotate-90" viewBox="0 0 320 320">
+              {/* Background Circle */}
               <circle
                 cx="160"
                 cy="160"
@@ -113,6 +125,7 @@ export default function FocusTimerModal({
                 stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}
                 strokeWidth="12"
               />
+              {/* Progress Circle */}
               <circle
                 cx="160"
                 cy="160"
@@ -128,7 +141,7 @@ export default function FocusTimerModal({
             </svg>
           ) : (
             <div className="w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
-              <svg viewBox="0 0 100 200" className="w-32 h-64 md:w-40 md:h-80 drop-shadow-xl">
+              <svg viewBox="0 0 100 200" className="w-32 h-64 md:w-40 md:h-80 drop-shadow-2xl">
                 <defs>
                   <clipPath id="topSandClip">
                      <path d="M 10 10 L 90 10 C 90 40 60 80 55 95 L 45 95 C 40 80 10 40 10 10 Z" />
@@ -156,15 +169,21 @@ export default function FocusTimerModal({
             </div>
           )}
           
-          <div className={`absolute flex flex-col items-center justify-center ${timerStyle === 'sand' ? 'bg-white/80 dark:bg-black/80 backdrop-blur-sm px-6 py-4 rounded-3xl shadow-lg border border-black/5 dark:border-white/5' : ''}`}>
-            <div className={`text-5xl md:text-7xl font-mono font-black tabular-nums tracking-tighter transition-colors ${
-                isOvertime ? "text-amber-600 dark:text-amber-400" : colorMap.textMain
+          <div className="absolute flex flex-col items-center justify-center pointer-events-none">
+            <div className={`font-mono font-black tabular-nums tracking-tighter transition-colors ${
+                timerStyle === 'sand'
+                  ? `text-4xl md:text-5xl ${isDark ? 'text-zinc-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' : 'text-zinc-900 drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)]'}`
+                  : `text-5xl md:text-7xl ${isOvertime ? (isDark ? "text-amber-400" : "text-amber-600") : colorMap.textMain}`
               }`}
             >
               {isOvertime ? `+${formatTime(overtimeSeconds)}` : formatTime(focusRemainingSeconds)}
             </div>
             {totalSubtasksCount > 0 && (
-              <div className={`mt-2 text-sm font-bold ${isOvertime ? "text-amber-500/80" : "text-emerald-500/80"}`}>
+              <div className={`mt-1 md:mt-2 font-bold ${
+                timerStyle === 'sand'
+                  ? `text-xs md:text-sm opacity-90 ${isDark ? 'text-zinc-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]' : 'text-zinc-900 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]'}`
+                  : `text-sm ${isOvertime ? "text-amber-500/80" : "text-emerald-500/80"}`
+                }`}>
                 {completedSubtasksCount} / {totalSubtasksCount} Subtasks
               </div>
             )}
@@ -172,7 +191,7 @@ export default function FocusTimerModal({
         </div>
 
         {totalSubtasksCount > 0 && (
-          <div className={`w-full max-w-md flex-1 overflow-y-auto min-h-0 mb-8 rounded-3xl p-4 border shadow-inner scrollbar-thin ${isDark ? 'bg-black/20 border-white/5 scrollbar-thumb-zinc-700' : 'bg-black/5 border-black/5 scrollbar-thumb-slate-300'}`}>
+          <div ref={scrollContainerRef} className={`w-full max-w-md flex-1 overflow-y-auto min-h-0 mb-8 p-2 scrollbar-thin scroll-smooth ${isDark ? 'scrollbar-thumb-zinc-700' : 'scrollbar-thumb-slate-300'}`}>
             <div className="space-y-3">
               {focusTask.subTasks.map((subTask: SubTask) => {
                 const isFirstUnchecked = subTask.id === firstUncheckedId;
@@ -197,6 +216,7 @@ export default function FocusTimerModal({
                 return (
                   <button
                     key={subTask.id}
+                    data-subtask-id={subTask.id}
                     onClick={() => toggleSubTask && toggleSubTask(focusTask.id, subTask.id)}
                     className={`w-full text-left flex items-start gap-3 p-4 rounded-2xl transition-all active:scale-[0.98] ${subTaskClasses}`}
                   >
