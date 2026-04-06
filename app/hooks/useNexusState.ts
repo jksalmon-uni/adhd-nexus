@@ -8,6 +8,7 @@ import {
   Ritual,
   Theme,
   ClaimedReward,
+  CustomWishlistItem,
 } from "../types";
 
 const useSystemTheme = () => {
@@ -161,6 +162,7 @@ export function useNexusState() {
     },
   ]);
   const [claimedRewards, setClaimedRewards] = useState<ClaimedReward[]>([]);
+  const [customWishlist, setCustomWishlist] = useState<CustomWishlistItem[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([
     { title: "Watch 1 YouTube video", duration: 15, cost: 15, id: "r1" },
     { title: "Gaming Session", duration: 30, cost: 30, id: "r2" },
@@ -175,6 +177,7 @@ export function useNexusState() {
     new Date().toISOString().split("T")[0]
   );
   const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const [newWishlistTitle, setNewWishlistTitle] = useState("");
   const [newRewardTitle, setNewRewardTitle] = useState("");
   const [newRewardDuration, setNewRewardDuration] = useState<number>(15);
   const [randomTaskId, setRandomTaskId] = useState<string | null>(null);
@@ -419,6 +422,7 @@ export function useNexusState() {
     load("last-plant", (v) => setLastPlantedDate(v as string), (v) => v);
     load("water", (v) => setWaterIntake(v as number), (v) => parseInt(v, 10) || 0);
     load("claimed-rewards", (v) => setClaimedRewards(v as ClaimedReward[]));
+    load("custom-wishlist", (v) => setCustomWishlist(v as CustomWishlistItem[]));
     const savedRituals = localStorage.getItem(SAVE_KEY + "rituals");
     if (savedRituals) {
       const parsedRituals: Ritual[] = JSON.parse(savedRituals);
@@ -463,6 +467,7 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
       save("last-plant", lastPlantedDate);
       save("water", waterIntake.toString());
       save("claimed-rewards", claimedRewards);
+      save("custom-wishlist", customWishlist);
     }
   }, [
     tasks,
@@ -482,6 +487,7 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
     SAVE_KEY,
     waterIntake,
     claimedRewards,
+    customWishlist,
   ]);
 
   // --- 4. THEME & MATH ---
@@ -622,16 +628,31 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
       colors: ["#a855f7", "#fcd34d", "#3b82f6"],
     });
     const fallbackPrizes = [
-      "Free Pass on 1 Chore",
-      "Take a 20 min Nap",
-      "Buy a small treat",
-      "Order Takeout tonight",
+      { id: "fb1", title: "Free Pass on 1 Chore", duration: 0, isWishlist: false },
+      { id: "fb2", title: "Take a 20 min Nap", duration: 20, isWishlist: false },
+      { id: "fb3", title: "Buy a small treat", duration: 0, isWishlist: false },
+      { id: "fb4", title: "Order Takeout tonight", duration: 0, isWishlist: false },
     ];
-    const won = [
-      ...rewards.map((r) => r.title),
+    const allPrizes = [
+      ...rewards.map((r) => ({ id: r.id, title: r.title, duration: r.duration, isWishlist: false })),
+      ...customWishlist.map((w) => ({ id: w.id, title: w.title, duration: 0, isWishlist: true })),
       ...fallbackPrizes,
-    ][Math.floor(Math.random() * (rewards.length + 4))];
-    setMysteryPrize(won);
+    ];
+    const won = allPrizes[Math.floor(Math.random() * allPrizes.length)];
+    setMysteryPrize(won.title);
+
+    const newClaimedReward: ClaimedReward = {
+      instanceId: `${Date.now()}-${Math.random()}`,
+      title: won.title,
+      duration: won.duration,
+      claimedAt: new Date().toISOString(),
+      used: false,
+    };
+    setClaimedRewards((prev) => [newClaimedReward, ...prev]);
+
+    if (won.isWishlist) {
+      setCustomWishlist((prev) => prev.filter((w) => w.id !== won.id));
+    }
   };
 
   const claimReward = (r: Reward) => {
@@ -786,6 +807,8 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
     setInputDate,
     showDurationPicker,
     setShowDurationPicker,
+    newWishlistTitle,
+    setNewWishlistTitle,
     newRewardTitle,
     setNewRewardTitle,
     newRewardDuration,
@@ -830,5 +853,7 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
     startHolding,
     stopHolding,
     claimedRewards,
+    customWishlist,
+    setCustomWishlist,
   };
 }

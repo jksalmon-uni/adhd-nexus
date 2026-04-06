@@ -284,6 +284,58 @@ export default function Home() {
                     <span className="text-amber-500 font-black">30 💎</span>
                   </button>
 
+                  {/* Dopamine Wishlist */}
+                  <div className={`p-4 rounded-2xl mt-8 flex flex-col gap-3 ${state.colorMap.card}`}>
+                    <h3 className={`text-center font-bold ${state.isDark ? "text-white" : "text-slate-800"}`}>
+                      Dopamine Wishlist
+                    </h3>
+                    <p className={`text-center text-xs px-4 mb-2 ${state.colorMap.textMuted}`}>
+                      Add small treats, activities, or fun tasks. They get added to the Mystery Box pool!
+                    </p>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!state.newWishlistTitle.trim()) return;
+                        state.setCustomWishlist([
+                          { id: Date.now().toString(), title: state.newWishlistTitle },
+                          ...state.customWishlist,
+                        ]);
+                        state.setNewWishlistTitle("");
+                      }}
+                      className="flex gap-2"
+                    >
+                      <input
+                        value={state.newWishlistTitle}
+                        onChange={(e) => state.setNewWishlistTitle(e.target.value)}
+                        placeholder="e.g. 'Watch an episode', 'Eat a cookie'"
+                        className={`flex-1 px-4 py-3 rounded-xl text-sm ${state.colorMap.input}`}
+                      />
+                      <button
+                        type="submit"
+                        disabled={!state.newWishlistTitle.trim()}
+                        className="bg-purple-600 px-4 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-opacity whitespace-nowrap"
+                      >
+                        Add to Box
+                      </button>
+                    </form>
+                    
+                    {state.customWishlist.length > 0 && (
+                      <div className="space-y-2 mt-4 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+                        {state.customWishlist.map((item) => (
+                          <div key={item.id} className={`flex justify-between items-center p-3 rounded-xl border ${state.colorMap.card}`}>
+                            <span className="text-sm font-medium">{item.title}</span>
+                            <button
+                              onClick={() => state.setCustomWishlist(state.customWishlist.filter((w) => w.id !== item.id))}
+                              className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
