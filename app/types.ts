@@ -5,6 +5,7 @@ export type Task = {
   date: string;
   subTasks: SubTask[];
   priority: Priority;
+  bounty?: string;
 };
 export type SubTask = { text: string; completed: boolean; id: string };
 export type Priority = "low" | "med" | "high" | "urgent";

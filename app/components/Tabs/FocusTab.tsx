@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Leaf, Play, Wand2, X, Sparkles, Loader2 } from "lucide-react";
-import type { Task, Priority, Ritual } from "../../types";
+import { Leaf, Play, Wand2, X, Sparkles, Loader2, Gift } from "lucide-react";
+import type { Task, Priority, Ritual, CustomWishlistItem } from "../../types";
 import UnstuckerChat from "./UnstuckerChat";
 
 interface FocusTabProps {
@@ -30,6 +30,7 @@ interface FocusTabProps {
   startFocusTimer: (task: Task, duration?: number) => void;
   setTasks: (tasks: Task[]) => void;
   getTaskStyles: (priority: Priority) => string;
+  customWishlist: CustomWishlistItem[];
 }
 
 export default function FocusTab({
@@ -57,11 +58,14 @@ export default function FocusTab({
   startFocusTimer,
   setTasks,
   getTaskStyles,
+  customWishlist,
 }: FocusTabProps) {
   
   const [unstuckTask, setUnstuckTask] = useState<string | null>(null);
   const [chosenTaskId, setChosenTaskId] = useState<string | null>(null);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+  const [attachingRewardFor, setAttachingRewardFor] = useState<string | null>(null);
+  const [newBountyText, setNewBountyText] = useState("");
 
   // UPDATED: Now points to the dedicated breakdown brain!
   const handleAIBreakdown = async (taskId: string, taskText: string) => {
@@ -294,6 +298,11 @@ export default function FocusTab({
                     />{" "}
                     {t.text}
                   </span>
+                  {t.bounty && (
+                    <div className="flex items-center gap-1 text-xs font-bold text-amber-500 mt-1 ml-6">
+                      <Gift size={12} /> Reward: {t.bounty}
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2 items-center">
                   <span className="text-amber-500 font-black text-xs pr-2">
@@ -334,6 +343,63 @@ export default function FocusTab({
                   isDark ? "border-zinc-800" : "border-slate-50"
                 }`}
               >
+                {t.priority === "urgent" && !t.bounty && attachingRewardFor !== t.id && (
+                  <div className="mt-4">
+                    <button
+                      onClick={() => setAttachingRewardFor(t.id)}
+                      className="flex items-center gap-2 text-xs font-bold bg-amber-500/10 text-amber-500 px-3 py-2 rounded-xl hover:bg-amber-500 hover:text-white transition-colors"
+                    >
+                      <Gift size={14} /> Attach Reward
+                    </button>
+                  </div>
+                )}
+                {attachingRewardFor === t.id && (
+                  <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col gap-2">
+                    <label className="text-xs font-bold text-amber-600 dark:text-amber-400">Attach a Reward to this Urgent Task</label>
+                    {customWishlist.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {customWishlist.map(w => (
+                          <button
+                            key={w.id}
+                            onClick={() => {
+                              setTasks(tasks.map(x => x.id === t.id ? { ...x, bounty: w.title } : x));
+                              setAttachingRewardFor(null);
+                            }}
+                            className="text-[10px] font-bold bg-amber-500 text-white px-2 py-1 rounded-lg hover:bg-amber-600"
+                          >
+                            {w.title}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <input
+                        value={newBountyText}
+                        onChange={(e) => setNewBountyText(e.target.value)}
+                        placeholder="Or type a custom reward..."
+                        className="flex-1 text-xs px-2 py-1 rounded-lg border border-amber-500/30 bg-white dark:bg-zinc-900 outline-none text-amber-600 dark:text-amber-400 placeholder:text-amber-500/50"
+                      />
+                      <button
+                        onClick={() => {
+                          if (!newBountyText.trim()) return;
+                          setTasks(tasks.map(x => x.id === t.id ? { ...x, bounty: newBountyText.trim() } : x));
+                          setNewBountyText("");
+                          setAttachingRewardFor(null);
+                        }}
+                        disabled={!newBountyText.trim()}
+                        className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-lg disabled:opacity-50"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => { setAttachingRewardFor(null); setNewBountyText(""); }}
+                        className="text-xs text-amber-600 dark:text-amber-400 px-2 py-1"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {/* SUBTASK GENERATOR BAR */}
                 <div className="flex items-center gap-2 mt-4">
                   <input

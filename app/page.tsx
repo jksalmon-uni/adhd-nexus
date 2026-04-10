@@ -154,6 +154,7 @@ export default function Home() {
                 startFocusTimer={state.startFocusTimer}
                 setTasks={state.setTasks}
                 getTaskStyles={state.getTaskStyles}
+                customWishlist={state.customWishlist}
               />
             )}
 

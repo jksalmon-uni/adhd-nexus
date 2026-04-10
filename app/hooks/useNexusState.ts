@@ -269,6 +269,18 @@ export function useNexusState() {
       const finalGems = potentialGems * overtimeMultiplier;
       awardPoints(finalGems);
 
+      if (t.bounty) {
+        const newClaimedReward: ClaimedReward = {
+          instanceId: `${Date.now()}-${Math.random()}`,
+          title: t.bounty,
+          duration: 0,
+          claimedAt: new Date().toISOString(),
+          used: false,
+        };
+        setClaimedRewards((prev) => [newClaimedReward, ...prev]);
+        setCustomWishlist((prev) => prev.filter((w) => w.title !== t.bounty));
+      }
+
       playSound("complete_task");
       setCompletedTasks((prev) =>
         [{ ...t, date: new Date().toISOString() }, ...prev].slice(0, 50)
@@ -299,6 +311,19 @@ export function useNexusState() {
       // This handles completing a task from the main list while a focus session for another task is active
       const t = tasks.find((x) => x.id === taskId);
       if (!t) return;
+
+      if (t.bounty) {
+        const newClaimedReward: ClaimedReward = {
+          instanceId: `${Date.now()}-${Math.random()}`,
+          title: t.bounty,
+          duration: 0,
+          claimedAt: new Date().toISOString(),
+          used: false,
+        };
+        setClaimedRewards((prev) => [newClaimedReward, ...prev]);
+        setCustomWishlist((prev) => prev.filter((w) => w.title !== t.bounty));
+      }
+
       playSound("complete_task");
       setCompletedTasks((prev) =>
         [{ ...t, date: new Date().toISOString() }, ...prev].slice(0, 50)
