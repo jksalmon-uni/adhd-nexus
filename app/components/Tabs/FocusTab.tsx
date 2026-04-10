@@ -448,58 +448,101 @@ export default function FocusTab({
                 </div>
 
                 {/* SUBTASKS LIST */}
-                <div className="space-y-2 mt-4">
+                <div className="flex flex-col mt-4">
                   {(() => {
-                    const activeStepIndex = t.subTasks.findIndex(s => !s.completed);
-                    return t.subTasks.map((s, i) => {
-                      const isActive = i === activeStepIndex;
-                      
-                      let containerClasses = "w-full flex items-center gap-3 p-3 rounded-xl text-xs transition-all border border-transparent";
-                      let boxClasses = "w-4 h-4 rounded border flex items-center justify-center text-[10px]";
-                      let textClasses = "text-left flex-1 leading-relaxed py-1";
+                    const unchecked = t.subTasks.filter(s => !s.completed);
+                    const completed = t.subTasks.filter(s => s.completed);
 
-                      if (s.completed) {
-                        containerClasses += " opacity-50 bg-black/5 dark:bg-white/5";
-                        boxClasses += " bg-emerald-500 border-emerald-500 text-white";
-                        textClasses += " line-through text-slate-500 dark:text-zinc-500";
-                      } else if (isActive) {
-                        containerClasses += " bg-white dark:bg-zinc-800 border-emerald-500/30 ring-1 ring-emerald-500/30 shadow-sm scale-[1.02] z-10 relative";
-                        boxClasses += " border-emerald-500";
-                        textClasses += " font-bold text-emerald-700 dark:text-emerald-400";
-                      } else {
-                        containerClasses += " bg-black/5 dark:bg-black/20";
-                        boxClasses += " border-zinc-400 dark:border-zinc-600";
-                        textClasses += " font-medium";
-                      }
+                    return (
+                      <>
+                        {unchecked.length > 0 && (
+                          <div className="relative flex flex-col mb-2">
+                            {unchecked.slice(0, 2).map((s, idx) => {
+                              const isActive = idx === 0;
+                              const isStacked = idx === 1;
+                              
+                              let containerClasses = "w-full flex items-center gap-3 p-3 rounded-xl text-xs transition-all border border-transparent";
+                              let boxClasses = "w-4 h-4 rounded border flex items-center justify-center text-[10px]";
+                              let textClasses = "text-left flex-1 leading-relaxed py-1";
 
-                      return (
-                        <button
-                          key={`sub-${s.id}-${i}`}
-                          onClick={() =>
-                            setTasks(
-                              tasks.map((x) =>
-                                x.id === t.id
-                                  ? {
-                                      ...x,
-                                      subTasks: x.subTasks.map((y) =>
-                                        y.id === s.id
-                                          ? { ...y, completed: !y.completed }
-                                          : y
-                                      ),
-                                    }
-                                  : x
-                              )
-                            )
-                          }
-                          className={containerClasses}
-                        >
-                          <div className={boxClasses}>
-                            {s.completed && "✓"}
+                              if (isActive) {
+                                containerClasses += " bg-white dark:bg-zinc-800 border-emerald-500/30 ring-1 ring-emerald-500/30 shadow-sm scale-[1.02] z-10 relative";
+                                boxClasses += " border-emerald-500";
+                                textClasses += " font-bold text-emerald-700 dark:text-emerald-400";
+                              } else if (isStacked) {
+                                containerClasses += " bg-black/5 dark:bg-black/20 -mt-3 scale-[0.95] opacity-50 z-0 relative";
+                                boxClasses += " border-zinc-400 dark:border-zinc-600";
+                                textClasses += " font-medium";
+                              }
+
+                              return (
+                                <button
+                                  key={`sub-${s.id}-${idx}`}
+                                  onClick={() =>
+                                    setTasks(
+                                      tasks.map((x) =>
+                                        x.id === t.id
+                                          ? {
+                                              ...x,
+                                              subTasks: x.subTasks.map((y) =>
+                                                y.id === s.id
+                                                  ? { ...y, completed: !y.completed }
+                                                  : y
+                                              ),
+                                            }
+                                          : x
+                                      )
+                                    )
+                                  }
+                                  className={containerClasses}
+                                >
+                                  <div className={boxClasses}></div>
+                                  <span className={textClasses}>{s.text}</span>
+                                </button>
+                              );
+                            })}
+                            
+                            {unchecked.length > 2 && (
+                              <div className="text-center text-[10px] font-black uppercase tracking-wider text-emerald-600/40 dark:text-emerald-400/30 mt-2">
+                                + {unchecked.length - 2} Upcoming
+                              </div>
+                            )}
                           </div>
-                          <span className={textClasses}>{s.text}</span>
-                        </button>
-                      );
-                    });
+                        )}
+
+                        {completed.length > 0 && (
+                          <div className="flex flex-col gap-1 mt-2 border-t border-dashed border-slate-200 dark:border-zinc-800 pt-3">
+                            {completed.map((s, idx) => (
+                              <button
+                                key={`sub-comp-${s.id}-${idx}`}
+                                onClick={() =>
+                                  setTasks(
+                                    tasks.map((x) =>
+                                      x.id === t.id
+                                        ? {
+                                            ...x,
+                                            subTasks: x.subTasks.map((y) =>
+                                              y.id === s.id
+                                                ? { ...y, completed: !y.completed }
+                                                : y
+                                            ),
+                                          }
+                                        : x
+                                    )
+                                  )
+                                }
+                                className="w-full flex items-center gap-3 p-2 rounded-xl text-xs transition-all border border-transparent opacity-40 hover:opacity-70 bg-black/5 dark:bg-white/5"
+                              >
+                                <div className="w-4 h-4 rounded border flex items-center justify-center text-[10px] bg-emerald-500 border-emerald-500 text-white">
+                                  ✓
+                                </div>
+                                <span className="text-left flex-1 leading-relaxed line-through text-slate-500 dark:text-zinc-500">{s.text}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
                   })()}
                 </div>
               </div>
