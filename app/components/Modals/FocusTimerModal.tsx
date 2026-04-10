@@ -187,7 +187,7 @@ export default function FocusTimerModal({
         </div>
 
         {totalSubtasksCount > 0 && (
-          <div className="w-full max-w-md flex-1 flex flex-col justify-start min-h-0 mb-8 px-4">
+          <div className="w-full max-w-md flex-1 overflow-y-auto min-h-0 mb-6 px-4">
             <div className="space-y-3">
               {focusTask.subTasks
                 .filter(s => !s.completed)
@@ -234,7 +234,7 @@ export default function FocusTimerModal({
 
         <button
           onClick={() => endFocusSession(true)}
-          className={`shrink-0 ${
+          className={`shrink-0 mt-4 mb-8 ${
             isOvertime ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20" : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
           } text-white font-bold py-4 px-10 rounded-full text-lg shadow-xl transition-all active:scale-95`}
         >

@@ -449,43 +449,58 @@ export default function FocusTab({
 
                 {/* SUBTASKS LIST */}
                 <div className="space-y-2 mt-4">
-                  {t.subTasks.map((s, i) => (
-                    <button
-                      key={`sub-${s.id}-${i}`}
-                      onClick={() =>
-                        setTasks(
-                          tasks.map((x) =>
-                            x.id === t.id
-                              ? {
-                                  ...x,
-                                  subTasks: x.subTasks.map((y) =>
-                                    y.id === s.id
-                                      ? { ...y, completed: !y.completed }
-                                      : y
-                                  ),
-                                }
-                              : x
-                          )
-                        )
+                  {(() => {
+                    const activeStepIndex = t.subTasks.findIndex(s => !s.completed);
+                    return t.subTasks.map((s, i) => {
+                      const isActive = i === activeStepIndex;
+                      
+                      let containerClasses = "w-full flex items-center gap-3 p-3 rounded-xl text-xs transition-all border border-transparent";
+                      let boxClasses = "w-4 h-4 rounded border flex items-center justify-center text-[10px]";
+                      let textClasses = "text-left flex-1 leading-relaxed py-1";
+
+                      if (s.completed) {
+                        containerClasses += " opacity-50 bg-black/5 dark:bg-white/5";
+                        boxClasses += " bg-emerald-500 border-emerald-500 text-white";
+                        textClasses += " line-through text-slate-500 dark:text-zinc-500";
+                      } else if (isActive) {
+                        containerClasses += " bg-white dark:bg-zinc-800 border-emerald-500/30 ring-1 ring-emerald-500/30 shadow-sm scale-[1.02] z-10 relative";
+                        boxClasses += " border-emerald-500";
+                        textClasses += " font-bold text-emerald-700 dark:text-emerald-400";
+                      } else {
+                        containerClasses += " bg-black/5 dark:bg-black/20";
+                        boxClasses += " border-zinc-400 dark:border-zinc-600";
+                        textClasses += " font-medium";
                       }
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl text-xs transition-all ${
-                        s.completed
-                          ? "opacity-30 line-through"
-                          : "bg-black/5 dark:bg-black/20"
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 rounded border ${
-                          s.completed
-                            ? "bg-emerald-500 border-emerald-500 text-white flex items-center justify-center text-[10px]"
-                            : "border-zinc-500 dark:border-zinc-700"
-                        }`}
-                      >
-                        {s.completed && "✓"}
-                      </div>
-                      <span className="text-left flex-1">{s.text}</span>
-                    </button>
-                  ))}
+
+                      return (
+                        <button
+                          key={`sub-${s.id}-${i}`}
+                          onClick={() =>
+                            setTasks(
+                              tasks.map((x) =>
+                                x.id === t.id
+                                  ? {
+                                      ...x,
+                                      subTasks: x.subTasks.map((y) =>
+                                        y.id === s.id
+                                          ? { ...y, completed: !y.completed }
+                                          : y
+                                      ),
+                                    }
+                                  : x
+                              )
+                            )
+                          }
+                          className={containerClasses}
+                        >
+                          <div className={boxClasses}>
+                            {s.completed && "✓"}
+                          </div>
+                          <span className={textClasses}>{s.text}</span>
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             </motion.div>
