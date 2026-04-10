@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { X, CloudRain, Coffee, Headphones, CheckCircle2, Circle, CircleDashed, Hourglass } from "lucide-react";
+import { X, CloudRain, Coffee, Headphones, CheckCircle2, Circle, CircleDashed, Hourglass, Gift } from "lucide-react";
 import { Task, SubTask } from "../../types";
 
 interface FocusTimerModalProps {
@@ -42,17 +42,6 @@ export default function FocusTimerModal({
 
   const completedSubtasksCount = focusTask.subTasks?.filter(s => s.completed).length || 0;
   const totalSubtasksCount = focusTask.subTasks?.length || 0;
-  const firstUncheckedId = focusTask.subTasks?.find(s => !s.completed)?.id;
-
-  // Auto-scroll to the next unchecked subtask
-  useEffect(() => {
-    if (firstUncheckedId && scrollContainerRef.current) {
-      const el = scrollContainerRef.current.querySelector(`[data-subtask-id="${firstUncheckedId}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [firstUncheckedId]);
 
   return (
     <motion.div
@@ -187,48 +176,58 @@ export default function FocusTimerModal({
                 {completedSubtasksCount} / {totalSubtasksCount} Subtasks
               </div>
             )}
+            {focusTask.bounty && (
+              <div className={`mt-2 px-3 py-1.5 rounded-full flex items-center gap-1.5 font-black text-xs md:text-sm shadow-xl backdrop-blur-sm ${
+                isOvertime ? "bg-amber-500 text-amber-50 border border-amber-400" : "bg-amber-400 text-amber-950 border border-amber-300"
+              }`}>
+                <Gift size={14} /> {focusTask.bounty}
+              </div>
+            )}
           </div>
         </div>
 
         {totalSubtasksCount > 0 && (
-          <div ref={scrollContainerRef} className={`w-full max-w-md flex-1 overflow-y-auto min-h-0 mb-8 p-2 scrollbar-thin scroll-smooth ${isDark ? 'scrollbar-thumb-zinc-700' : 'scrollbar-thumb-slate-300'}`}>
+          <div className="w-full max-w-md flex-1 flex flex-col justify-start min-h-0 mb-8 px-4">
             <div className="space-y-3">
-              {focusTask.subTasks.map((subTask: SubTask) => {
-                const isFirstUnchecked = subTask.id === firstUncheckedId;
-                let subTaskClasses = "";
-                let iconColor = "";
+              {focusTask.subTasks
+                .filter(s => !s.completed)
+                .slice(0, 2)
+                .map((subTask: SubTask, index: number) => {
+                  const isActive = index === 0;
+                  const isUpNext = index === 1;
 
-                if (subTask.completed) {
-                  subTaskClasses = isDark 
-                    ? "bg-zinc-900/50 text-zinc-400/50 border-transparent opacity-50"
-                    : "bg-slate-50/50 text-slate-500/50 border-transparent opacity-50";
-                  iconColor = "text-emerald-500";
-                } else if (isFirstUnchecked) {
-                  subTaskClasses = isOvertime 
-                    ? (isDark ? "bg-amber-900/20 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-500/50 text-amber-100" : "bg-amber-50 border-amber-400 shadow-md ring-1 ring-amber-400 text-amber-900")
-                    : (isDark ? "bg-emerald-900/20 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50 text-emerald-100" : "bg-emerald-50 border-emerald-400 shadow-md ring-1 ring-emerald-400 text-emerald-900");
-                  iconColor = isOvertime ? "text-amber-500" : "text-emerald-500";
-                } else {
-                  subTaskClasses = colorMap.card + " " + colorMap.textMain + " border";
-                  iconColor = colorMap.textMuted;
-                }
+                  let subTaskClasses = "";
+                  let iconColor = "";
 
-                return (
-                  <button
-                    key={subTask.id}
-                    data-subtask-id={subTask.id}
-                    onClick={() => toggleSubTask && toggleSubTask(focusTask.id, subTask.id)}
-                    className={`w-full text-left flex items-start gap-3 p-4 rounded-2xl transition-all active:scale-[0.98] ${subTaskClasses}`}
-                  >
-                    <div className={`mt-0.5 shrink-0 transition-colors ${iconColor}`}>
-                      {subTask.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
-                    </div>
-                    <span className={`text-sm md:text-base font-medium leading-relaxed transition-all ${subTask.completed ? 'line-through' : ''}`}>
-                      {subTask.text}
-                    </span>
-                  </button>
-                );
-              })}
+                  if (isActive) {
+                    subTaskClasses = isOvertime 
+                      ? (isDark ? "bg-amber-900/20 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-1 ring-amber-500/50 text-amber-100" : "bg-amber-50 border-amber-400 shadow-md ring-1 ring-amber-400 text-amber-900")
+                      : (isDark ? "bg-emerald-900/20 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50 text-emerald-100" : "bg-emerald-50 border-emerald-400 shadow-md ring-1 ring-emerald-400 text-emerald-900");
+                    iconColor = isOvertime ? "text-amber-500" : "text-emerald-500";
+                  } else if (isUpNext) {
+                    subTaskClasses = (isDark ? "bg-zinc-900/40 border-zinc-800 text-zinc-400 opacity-60" : "bg-slate-50 border-slate-200 text-slate-500 opacity-60") + " scale-[0.98]";
+                    iconColor = colorMap.textMuted;
+                  }
+
+                  return (
+                    <button
+                      key={subTask.id}
+                      onClick={() => toggleSubTask && toggleSubTask(focusTask.id, subTask.id)}
+                      className={`w-full text-left flex items-start gap-4 p-5 rounded-[24px] transition-all active:scale-[0.98] border ${subTaskClasses}`}
+                    >
+                      <div className={`mt-0.5 shrink-0 transition-colors ${iconColor}`}>
+                        <Circle size={24} strokeWidth={isActive ? 2.5 : 2} />
+                      </div>
+                      <div className="flex flex-col flex-1 min-w-0">
+                        {isActive && <span className={`text-[10px] font-black uppercase mb-1 tracking-wider ${iconColor}`}>Active Step</span>}
+                        {isUpNext && <span className={`text-[10px] font-black uppercase mb-1 tracking-wider ${iconColor}`}>Up Next</span>}
+                        <span className={`text-sm md:text-base font-bold leading-relaxed break-words whitespace-normal ${isActive ? '' : 'font-medium'}`}>
+                          {subTask.text}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
             </div>
           </div>
         )}
