@@ -494,6 +494,7 @@ export default function Home() {
             isDark={state.isDark}
             formatTime={state.formatTime}
             toggleSubTask={state.toggleSubTask}
+            addFocusTime={state.addFocusTime}
           />
         )}
       </AnimatePresence>

@@ -383,6 +383,28 @@ export function useNexusState() {
     }, 1000);
   };
 
+  const addFocusTime = (minutes: number) => {
+    if (!focusTask) return;
+
+    setFocusTask((prev) => {
+      if (!prev) return prev;
+      return { ...prev, duration: prev.duration + minutes };
+    });
+
+    setFocusRemainingSeconds((prev) => prev + (minutes * 60));
+
+    if (isOvertime) {
+      setIsOvertime(false);
+      setOvertimeSeconds(0);
+      if (overtimeIntervalRef.current) clearInterval(overtimeIntervalRef.current);
+      if (focusIntervalRef.current) clearInterval(focusIntervalRef.current);
+      
+      focusIntervalRef.current = setInterval(() => {
+        setFocusRemainingSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+  };
+
   // --- 3. PERSISTENCE ---
   useEffect(() => {
     // Start overtime timer when main timer finishes
@@ -862,6 +884,7 @@ load("points", (v: any) => setPoints(v), (v) => parseInt(v, 10) || 0);    }
     completeTask,
     toggleSubTask,
     startFocusTimer,
+    addFocusTime,
     systemTheme,
     isDark,
     colorMap,

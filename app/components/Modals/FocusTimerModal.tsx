@@ -16,6 +16,7 @@ interface FocusTimerModalProps {
   isDark: boolean;
   formatTime: (seconds: number) => string;
   toggleSubTask?: (taskId: string, subTaskId: string) => void;
+  addFocusTime?: (minutes: number) => void;
 }
 
 export default function FocusTimerModal({
@@ -30,6 +31,7 @@ export default function FocusTimerModal({
   isDark,
   formatTime,
   toggleSubTask,
+  addFocusTime,
 }: FocusTimerModalProps) {
   const [timerStyle, setTimerStyle] = useState<'circle' | 'sand'>('circle');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -210,14 +212,16 @@ export default function FocusTimerModal({
                   }
 
                   return (
-                    <button
+                    <div
                       key={subTask.id}
-                      onClick={() => toggleSubTask && toggleSubTask(focusTask.id, subTask.id)}
-                      className={`w-full text-left flex items-start gap-4 p-5 rounded-[24px] transition-all active:scale-[0.98] border ${subTaskClasses}`}
+                      className={`w-full text-left flex items-start gap-4 p-5 rounded-[24px] transition-all border ${subTaskClasses}`}
                     >
-                      <div className={`mt-0.5 shrink-0 transition-colors ${iconColor}`}>
+                      <button
+                        onClick={() => toggleSubTask && toggleSubTask(focusTask.id, subTask.id)}
+                        className={`mt-0.5 shrink-0 transition-colors hover:scale-110 active:scale-95 ${iconColor}`}
+                      >
                         <Circle size={24} strokeWidth={isActive ? 2.5 : 2} />
-                      </div>
+                      </button>
                       <div className="flex flex-col flex-1 min-w-0">
                         {isActive && <span className={`text-[10px] font-black uppercase mb-1 tracking-wider ${iconColor}`}>Active Step</span>}
                         {isUpNext && <span className={`text-[10px] font-black uppercase mb-1 tracking-wider ${iconColor}`}>Up Next</span>}
@@ -225,21 +229,47 @@ export default function FocusTimerModal({
                           {subTask.text}
                         </span>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
             </div>
           </div>
         )}
 
-        <button
-          onClick={() => endFocusSession(true)}
-          className={`shrink-0 mt-4 mb-8 ${
-            isOvertime ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20" : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
-          } text-white font-bold py-4 px-10 rounded-full text-lg shadow-xl transition-all active:scale-95`}
-        >
-          Have you completed it?
-        </button>
+        <div className="shrink-0 w-full max-w-md flex flex-col items-center gap-6 mt-4 mb-8 px-4">
+          <div className="flex flex-col items-center gap-3 w-full">
+            <span className={`text-xs font-bold uppercase tracking-wider ${colorMap.textMuted}`}>
+              Need more time?
+            </span>
+            <div className="flex justify-center gap-3 w-full">
+              <button
+                onClick={() => addFocusTime && addFocusTime(5)}
+                className={`flex-1 py-3 rounded-2xl text-sm font-bold border transition-all active:scale-95 ${
+                  isDark ? "bg-zinc-800/50 border-zinc-700 text-zinc-300 hover:bg-zinc-800" : "bg-white/50 border-slate-200 text-slate-600 hover:bg-white"
+                }`}
+              >
+                + 5m
+              </button>
+              <button
+                onClick={() => addFocusTime && addFocusTime(15)}
+                className={`flex-1 py-3 rounded-2xl text-sm font-bold border transition-all active:scale-95 ${
+                  isDark ? "bg-zinc-800/50 border-zinc-700 text-zinc-300 hover:bg-zinc-800" : "bg-white/50 border-slate-200 text-slate-600 hover:bg-white"
+                }`}
+              >
+                + 15m
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={() => endFocusSession(true)}
+            className={`w-full ${
+              isOvertime ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20" : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
+            } text-white font-bold py-5 rounded-[24px] text-lg shadow-xl transition-all active:scale-95 flex flex-col items-center justify-center gap-1`}
+          >
+            <span>Finish Task {focusTask.bounty ? "& Claim Reward" : ""}</span>
+          </button>
+        </div>
 
       </div>
     </motion.div>
