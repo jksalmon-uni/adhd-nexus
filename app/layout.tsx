@@ -16,6 +16,14 @@ export const metadata: Metadata = {
   title: "ADHD Nexus",
   description: "Your daily focus and cognitive support system.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png' // Apple Touch Icon for iOS devices
+  }
 };
 
 export default function RootLayout({
